@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# User-specific & Security
+allapis.txt
+.agent/
+ESUT_SPHERE_CONTEXT.md
+ESUT_SPHERE_DESIGN.md
+firestore.rules
+database.rules.json
+ROADMAP.md
+jot.txt

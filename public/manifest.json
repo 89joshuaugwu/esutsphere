@@ -1,0 +1,21 @@
+{
+  "name": "ESUTSphere",
+  "short_name": "ESUTSphere",
+  "description": "The Academic Hub for ESUT Students",
+  "start_url": "/feed",
+  "display": "standalone",
+  "background_color": "#080810",
+  "theme_color": "#7C3AED",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=esut&backgroundColor=7c3aed",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=esut&backgroundColor=7c3aed",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
