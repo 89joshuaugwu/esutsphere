@@ -11,7 +11,7 @@ export default function FeedPost({ post }: { post: any }) {
 
   const handleLike = () => {
     setIsLiked(!isLiked);
-    setLikes(prev => isLiked ? prev - 1 : prev + 1);
+    setLikes((prev: number) => isLiked ? prev - 1 : prev + 1);
   };
 
   return (
