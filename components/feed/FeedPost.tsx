@@ -1,85 +1,72 @@
 "use client";
 import { useState } from "react";
+import FeedPost from "@/components/feed/FeedPost";
+import { PenSquare } from "lucide-react";
 import Link from "next/link";
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal } from "lucide-react";
 import { motion } from "motion/react";
 
-export default function FeedPost({ post }: { post: any }) {
-  const [isLiked, setIsLiked] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [likes, setLikes] = useState(post.likesCount || 0);
+const MOCK_POSTS = [
+  {
+    id: "p1",
+    authorName: "John Doe",
+    authorUsername: "johndoe",
+    timeAgo: "2h ago",
+    title: "How to survive CSC 201 Project Defense",
+    excerpt: "I just finished my CSC 201 defense and here are some quick tips. The lecturers usually look out for how well you can explain your code, not just if it runs. Make sure you understand every single function you wrote.",
+    likesCount: 142,
+    commentsCount: 24,
+  },
+  {
+    id: "p2",
+    authorName: "Jane Smith",
+    authorUsername: "janesmith",
+    timeAgo: "5h ago",
+    title: "Just uploaded MTH 201 Past Questions",
+    excerpt: "Hey guys, I've compiled the past questions for General Mathematics II from 2018 to 2022. It's now available in the library section. Go check it out before the CA next week!",
+    likesCount: 89,
+    commentsCount: 12,
+  }
+];
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikes((prev: number) => isLiked ? prev - 1 : prev + 1);
+export default function FeedPage() {
+  const [posts, setPosts] = useState(MOCK_POSTS);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadMore = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setPosts([...posts, ...MOCK_POSTS.map(p => ({ ...p, id: p.id + Math.random() }))]);
+      setIsLoading(false);
+    }, 1000);
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-[#16162A] border border-white/10 rounded-[16px] p-5 mb-6 transition-all duration-200 hover:border-white/20 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.3)]"
-    >
-      {/* Header */}
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex gap-3">
-          <Link href={`/profile/${post.authorUsername}`}>
-            <img 
-              src={post.authorAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.authorUsername}`} 
-              alt={post.authorUsername}
-              className="w-10 h-10 rounded-full bg-bg-surface-3 border border-white/10"
-            />
-          </Link>
-          <div>
-            <Link href={`/profile/${post.authorUsername}`} className="font-ui text-[15px] font-semibold text-text-primary hover:text-brand-light transition-colors">
-              {post.authorName}
-            </Link>
-            <p className="text-xs text-text-muted">@{post.authorUsername} • {post.timeAgo}</p>
-          </div>
-        </div>
-        <button className="text-text-muted hover:text-white transition-colors">
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="mb-4">
-        <h3 className="font-ui text-lg font-semibold text-text-primary mb-2">{post.title}</h3>
-        <p className="text-text-secondary text-[15px] leading-relaxed line-clamp-3">
-          {post.excerpt}
-        </p>
-      </div>
-
-      {/* Interaction Bar */}
-      <div className="flex items-center justify-between pt-4 border-t border-white/5">
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={handleLike}
-            className={`flex items-center gap-2 text-sm transition-colors ${isLiked ? 'text-brand-light' : 'text-text-muted hover:text-brand-light'}`}
-          >
-            <motion.div whileTap={{ scale: 0.8 }}>
-              <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-            </motion.div>
-            <span>{likes}</span>
-          </button>
-          <button className="flex items-center gap-2 text-sm text-text-muted hover:text-cyan transition-colors">
-            <MessageCircle className="w-5 h-5" />
-            <span>{post.commentsCount || 0}</span>
-          </button>
-          <button className="flex items-center gap-2 text-sm text-text-muted hover:text-text-primary transition-colors">
-            <Share2 className="w-5 h-5" />
-          </button>
-        </div>
-        
-        <button 
-          onClick={() => setIsBookmarked(!isBookmarked)}
-          className={`text-sm transition-colors ${isBookmarked ? 'text-gold' : 'text-text-muted hover:text-gold'}`}
+    <div className="max-w-2xl mx-auto space-y-6 pb-10">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-display text-4xl text-text-primary">Campus Feed</h1>
+        <Link 
+          href="/blog/write" 
+          className="h-10 px-4 bg-brand/10 text-brand-light font-medium rounded-lg hover:bg-brand/20 flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(124,58,237,0.15)]"
         >
-          <motion.div whileTap={{ scale: 0.8 }}>
-            <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
-          </motion.div>
+          <PenSquare className="w-4 h-4" /> Write Post
+        </Link>
+      </div>
+
+      <div className="space-y-0">
+        {posts.map(post => (
+          <FeedPost key={post.id} post={post} />
+        ))}
+      </div>
+
+      <div className="text-center pt-4">
+        <button 
+          onClick={loadMore}
+          disabled={isLoading}
+          className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-text-secondary hover:text-white hover:bg-white/10 transition-all text-sm font-medium disabled:opacity-50"
+        >
+          {isLoading ? "Loading..." : "Load More"}
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
