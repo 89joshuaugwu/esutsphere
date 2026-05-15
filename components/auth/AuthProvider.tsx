@@ -5,7 +5,26 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-const PUBLIC_ROUTES = ["/login", "/"];
+/**
+ * Public routes that do NOT require authentication.
+ * Per ESUT_SPHERE_AUTH.md §10: /, /login, /signup, /blog, /library, /profile are public.
+ */
+const PUBLIC_ROUTES = ["/", "/login", "/signup"];
+const PUBLIC_PREFIXES = ["/blog", "/library", "/profile"];
+
+/**
+ * Onboarding routes — require Firebase auth but NOT approval.
+ */
+const ONBOARDING_PREFIXES = ["/onboarding"];
+
+function isPublicRoute(pathname: string): boolean {
+  if (PUBLIC_ROUTES.includes(pathname)) return true;
+  return PUBLIC_PREFIXES.some(prefix => pathname.startsWith(prefix));
+}
+
+function isOnboardingRoute(pathname: string): boolean {
+  return ONBOARDING_PREFIXES.some(prefix => pathname.startsWith(prefix));
+}
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
@@ -14,29 +33,54 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // ── No user ──────────────────────────────────────────
       if (!user) {
-        if (!PUBLIC_ROUTES.includes(pathname) && !pathname.startsWith("/onboarding")) {
-          router.push("/login");
-        } else {
+        // Public routes are accessible without auth
+        if (isPublicRoute(pathname)) {
           setLoading(false);
+          return;
         }
+        // Onboarding routes without auth → back to login
+        if (isOnboardingRoute(pathname)) {
+          router.push("/login");
+          setLoading(false);
+          return;
+        }
+        // All other routes require auth → redirect to login
+        router.push("/login");
+        setLoading(false);
         return;
       }
 
+      // ── User exists ──────────────────────────────────────
       try {
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          if (!pathname.startsWith("/onboarding")) {
+          // New user — no Firestore doc yet → onboarding
+          if (!isOnboardingRoute(pathname) && !isPublicRoute(pathname)) {
             router.push("/onboarding/step-1");
           }
         } else {
           const userData = userDoc.data();
-          if (userData.approvalStatus === "pending" && !pathname.startsWith("/onboarding/pending")) {
-            router.push("/onboarding/pending");
-          } else if (userData.approvalStatus === "rejected" && pathname !== "/login") {
+          const status = userData.approvalStatus;
+
+          // Rejected → show rejection on login page
+          if (status === "rejected" && pathname !== "/login") {
             router.push("/login");
+          }
+          // Pending → only allow onboarding/pending + public routes
+          else if (status === "pending") {
+            if (!pathname.startsWith("/onboarding/pending") && !isPublicRoute(pathname)) {
+              router.push("/onboarding/pending");
+            }
+          }
+          // Approved → if they're on login/signup, redirect to feed
+          else if (status === "approved") {
+            if (pathname === "/login" || pathname === "/signup") {
+              router.push("/feed");
+            }
           }
         }
       } catch (error) {
