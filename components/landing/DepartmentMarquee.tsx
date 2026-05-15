@@ -11,7 +11,7 @@ export default function DepartmentMarquee() {
       <div className="absolute top-0 bottom-0 left-0 w-[120px] z-[2] pointer-events-none bg-[linear-gradient(to_right,#0F0F1A,transparent)]" />
       <div className="absolute top-0 bottom-0 right-0 w-[120px] z-[2] pointer-events-none bg-[linear-gradient(to_left,#0F0F1A,transparent)]" />
 
-      <div className="flex gap-8 items-center animate-[marquee-scroll_35s_linear_infinite] w-max">
+      <div className="flex gap-8 items-center animate-[marquee-scroll_80s_linear_infinite] w-max">
         {depts.map((d, i) => (
           <div
             key={`${d.name}-${i}`}

@@ -31,28 +31,28 @@ export default function LandingNav() {
 
   return (
     <>
-      {/* ══════════════════════════════════════════════════════
-          DESKTOP — Wide floating pill navbar
-          ══════════════════════════════════════════════════════ */}
-      <div className="hidden md:flex fixed top-0 left-0 right-0 z-[100] justify-center px-6 pt-3">
+      {/* ── Floating Pill Navbar ─────────────────────────────── */}
+      <div className="fixed top-0 left-0 right-0 z-[100] flex justify-center px-4 pt-3 pointer-events-none">
         <nav
-          className={`flex items-center justify-between w-full max-w-[900px] h-[54px] px-2.5 rounded-full border transition-all duration-500 ${
+          className={`pointer-events-auto flex items-center gap-1 h-[52px] px-2.5 sm:px-2 rounded-full border transition-all duration-500 w-[calc(100%-2rem)] sm:w-auto ${
             scrolled
-              ? "bg-[rgba(8,8,16,0.94)] border-white/[0.12] shadow-[0_8px_40px_rgba(0,0,0,0.6)]"
+              ? "bg-[rgba(8,8,16,0.92)] border-white/[0.12] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
               : "bg-[rgba(15,15,26,0.75)] border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.3)]"
           }`}
           style={{ backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}
         >
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 pl-2 shrink-0">
+          {/* Logo + Gradient Wordmark */}
+          <Link href="/" className="flex items-center gap-2 px-3 shrink-0">
             <Image src="/logo.png" alt="ESUTSphere" width={28} height={28} className="rounded-lg" />
-            <span className="text-text-primary font-semibold text-[15px] tracking-[-0.3px]">
-              ESUT<span className="text-brand-light">Sphere</span>
+            <span className="text-[15px] font-bold tracking-[-0.3px]">
+              <span className="bg-[linear-gradient(135deg,#A855F7_0%,#7C3AED_45%,#06B6D4_100%)] bg-clip-text text-transparent">
+                ESUTSphere
+              </span>
             </span>
           </Link>
 
-          {/* Nav Links — centered */}
-          <div className="flex items-center gap-1">
+          {/* Desktop Nav Links */}
+          <div className="hidden md:flex items-center gap-0.5 mx-1">
             {NAV_LINKS.map((link) => {
               const Icon = link.icon;
               const isActive = activeLink === link.href;
@@ -61,9 +61,9 @@ export default function LandingNav() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setActiveLink(link.href)}
-                  className={`relative flex items-center gap-1.5 text-[13px] font-medium px-4 py-[7px] rounded-full transition-all duration-200 ${
+                  className={`relative flex items-center gap-1.5 text-[13px] font-medium px-3.5 py-[7px] rounded-full transition-all duration-200 ${
                     isActive
-                      ? "bg-brand text-white shadow-[0_2px_12px_rgba(124,58,237,0.45)]"
+                      ? "bg-brand text-white shadow-[0_2px_12px_rgba(124,58,237,0.4)]"
                       : "text-text-muted hover:text-text-primary hover:bg-white/[0.07]"
                   }`}
                 >
@@ -75,57 +75,37 @@ export default function LandingNav() {
           </div>
 
           {/* Right — Bell + Sign In */}
-          <div className="flex items-center gap-2 pr-1">
-            <button className="relative w-9 h-9 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-white/[0.07] transition-all">
-              <Bell className="w-[18px] h-[18px]" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand border-[1.5px] border-[#0F0F1A]" />
+          <div className="hidden md:flex items-center gap-1.5 ml-1">
+            <button className="relative w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-white/[0.07] transition-all">
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-brand border border-bg-base" />
             </button>
             <Link
               href="/login"
-              className="flex items-center gap-1.5 bg-brand hover:bg-brand-light text-white text-[13px] font-semibold pl-4 pr-4 py-[7px] rounded-full border border-brand-light/40 transition-all duration-200 hover:shadow-[0_0_20px_rgba(124,58,237,0.5)] hover:-translate-y-px"
+              className="flex items-center gap-1.5 bg-brand hover:bg-brand-light text-white text-[13px] font-semibold ml-0.5 pl-3.5 pr-4 py-[7px] rounded-full border border-brand-light/40 transition-all duration-200 hover:shadow-[0_0_20px_rgba(124,58,237,0.5)] hover:-translate-y-px"
             >
               <LogIn className="w-3.5 h-3.5" />
               Sign In
             </Link>
           </div>
+
+          {/* Mobile — Bell + Hamburger */}
+          <div className="flex md:hidden items-center gap-1 ml-auto pr-1">
+            <button className="relative w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary transition-all">
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-brand border border-bg-base" />
+            </button>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-text-muted hover:bg-white/[0.08] hover:text-text-primary transition-all"
+            >
+              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </nav>
       </div>
 
-      {/* ══════════════════════════════════════════════════════
-          MOBILE — Full-width sticky bar
-          ══════════════════════════════════════════════════════ */}
-      <div
-        className={`md:hidden fixed top-0 left-0 right-0 z-[100] h-14 flex items-center justify-between px-4 border-b transition-all duration-300 ${
-          scrolled
-            ? "bg-[rgba(8,8,16,0.95)] border-white/[0.10]"
-            : "bg-brand/90 border-brand-light/20"
-        }`}
-        style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
-      >
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image src="/logo.png" alt="ESUTSphere" width={26} height={26} className="rounded-md" />
-          <span className="text-white font-semibold text-[15px] tracking-[-0.3px]">
-            ESUT<span className="text-white/80">Sphere</span>
-          </span>
-        </Link>
-
-        <div className="flex items-center gap-1">
-          <button className="relative w-9 h-9 rounded-full flex items-center justify-center text-white/80 hover:text-white transition-all">
-            <Bell className="w-[18px] h-[18px]" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-cyan border-[1.5px] border-brand" />
-          </button>
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-all"
-          >
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* ══════════════════════════════════════════════════════
-          MOBILE — Full-screen menu overlay
-          ══════════════════════════════════════════════════════ */}
+      {/* ── Mobile Menu Panel ────────────────────────────────── */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
@@ -135,40 +115,18 @@ export default function LandingNav() {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[99] md:hidden"
           >
-            {/* Dark backdrop */}
-            <div
-              className="absolute inset-0 bg-[rgba(8,8,16,0.85)]"
-              onClick={() => setMenuOpen(false)}
-              style={{ backdropFilter: "blur(8px)" }}
-            />
+            <div className="absolute inset-0 bg-[rgba(8,8,16,0.6)]" onClick={() => setMenuOpen(false)} style={{ backdropFilter: "blur(6px)" }} />
 
-            {/* Full-width menu panel */}
             <motion.div
-              initial={{ opacity: 0, y: -30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
-              className="relative bg-[rgba(15,15,26,0.97)] border-b border-white/[0.08] pt-16 pb-6 px-5"
-              style={{ backdropFilter: "blur(24px)" }}
+              initial={{ opacity: 0, y: -16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] }}
+              className="relative mx-4 mt-[72px] bg-[rgba(22,22,42,0.95)] border border-white/[0.10] rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.7)]"
+              style={{ backdropFilter: "blur(20px)" }}
             >
-              {/* Close + logo header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2.5">
-                  <Image src="/logo.png" alt="ESUTSphere" width={32} height={32} className="rounded-lg" />
-                  <span className="text-text-primary font-semibold text-[17px]">
-                    ESUT<span className="text-brand-light">Sphere</span>
-                  </span>
-                </div>
-                <button
-                  onClick={() => setMenuOpen(false)}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.06] text-text-muted hover:text-text-primary transition-all border border-white/[0.08]"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Nav links — large, full width */}
-              <div className="space-y-1 mb-6">
+              {/* Links */}
+              <div className="p-3 pt-4 space-y-1">
                 {NAV_LINKS.map((link) => {
                   const Icon = link.icon;
                   const isActive = activeLink === link.href;
@@ -177,32 +135,30 @@ export default function LandingNav() {
                       key={link.href}
                       href={link.href}
                       onClick={() => { setActiveLink(link.href); setMenuOpen(false); }}
-                      className={`flex items-center gap-4 w-full px-5 py-4 rounded-2xl transition-all duration-200 ${
+                      className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 ${
                         isActive
-                          ? "bg-brand/15 text-brand-light border border-brand/20"
-                          : "text-text-secondary hover:bg-white/[0.05] hover:text-text-primary border border-transparent"
+                          ? "bg-brand/15 text-brand-light"
+                          : "text-text-secondary hover:bg-white/[0.05] hover:text-text-primary"
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        isActive ? "bg-brand/20" : "bg-white/[0.06]"
-                      }`}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <span className="text-[17px] font-medium">{link.label}</span>
+                      <Icon className="w-5 h-5" />
+                      <span className="text-[15px] font-medium">{link.label}</span>
                     </Link>
                   );
                 })}
               </div>
 
-              {/* Sign In button */}
-              <Link
-                href="/login"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center gap-2.5 w-full bg-brand hover:bg-brand-light text-white text-[16px] font-semibold py-4 rounded-2xl transition-all duration-200 shadow-[0_4px_20px_rgba(124,58,237,0.4)]"
-              >
-                <ArrowRight className="w-5 h-5" />
-                Sign In
-              </Link>
+              {/* Sign In */}
+              <div className="p-3 pt-0">
+                <Link
+                  href="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-light text-white text-[15px] font-semibold py-3 rounded-xl transition-all duration-200"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  Sign In
+                </Link>
+              </div>
             </motion.div>
           </motion.div>
         )}
