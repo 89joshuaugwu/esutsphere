@@ -13,7 +13,7 @@ export default function AppLayout({
       <div className="flex flex-1">
         <Sidebar />
         <main className="flex-1 md:ml-[var(--sidebar-width)] pb-[calc(var(--nav-height)+env(safe-area-inset-bottom))] md:pb-0 relative min-h-[calc(100vh-var(--nav-height))]">
-          <div className="mx-auto max-w-[var(--content-max)] lg:max-w-[800px] p-4 md:p-6 lg:p-8">
+          <div className="px-4 md:px-7 lg:px-8 py-0">
             {children}
           </div>
         </main>
