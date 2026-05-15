@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useOnboarding } from "@/components/onboarding/OnboardingContext";
-import { DEPARTMENTS } from "@/constants/departments";
+import { DEPARTMENTS, getFacultyForDepartment } from "@/constants/departments";
 import toast from "react-hot-toast";
 
 const MATRIC_REGEX = /^\d{4}\/\d{6}\/[A-Z]{2,6}$/;
@@ -52,28 +52,31 @@ export default function Step1Page() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">Faculty</label>
-            <input 
-              required
-              type="text" 
-              placeholder="e.g. Natural Sciences"
-              className="w-full bg-white/5 border border-white/10 rounded-lg h-11 px-4 text-text-primary outline-hidden focus:border-brand/50 focus:ring-[3px] focus:ring-brand/10"
-              value={faculty}
-              onChange={e => setFaculty(e.target.value)}
-            />
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-text-secondary mb-1.5">Department</label>
             <select 
               required
               className="w-full bg-[#1A1A2E] border border-white/10 rounded-lg h-11 px-4 text-text-primary outline-hidden focus:border-brand/50 focus:ring-[3px] focus:ring-brand/10"
               value={dept}
-              onChange={e => setDept(e.target.value)}
+              onChange={e => {
+                const selected = e.target.value;
+                setDept(selected);
+                setFaculty(getFacultyForDepartment(selected));
+              }}
             >
               <option value="">Select Department</option>
-              {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+              {DEPARTMENTS.map(d => <option key={d.name} value={d.name}>{d.emoji} {d.name}</option>)}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">Faculty</label>
+            <input 
+              readOnly
+              type="text" 
+              placeholder="Auto-filled from department"
+              className="w-full bg-white/5 border border-white/10 rounded-lg h-11 px-4 text-text-primary outline-hidden cursor-not-allowed opacity-70"
+              value={faculty}
+            />
           </div>
 
           <div>

@@ -53,3 +53,50 @@ body {
   color: var(--color-text-primary);
   font-family: var(--font-ui);
 }
+
+/* ─── Landing Page Animations ─────────────────────────────────── */
+
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(30px, -25px) scale(1.05); }
+  66%  { transform: translate(-20px, 20px) scale(0.97); }
+}
+
+@keyframes text-shimmer {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes card-float-1 {
+  0%, 100% { transform: rotate(3deg) translateY(0px); }
+  50%      { transform: rotate(3deg) translateY(-12px); }
+}
+
+@keyframes card-float-2 {
+  0%, 100% { transform: rotate(-2deg) translateY(0px); }
+  50%      { transform: rotate(-2deg) translateY(-16px); }
+}
+
+@keyframes card-float-3 {
+  0%, 100% { transform: rotate(1deg) translateY(0px); }
+  50%      { transform: rotate(1deg) translateY(-10px); }
+}
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.3); }
+  50%      { box-shadow: 0 0 0 20px rgba(124, 58, 237, 0); }
+}
+
+/* Hide scrollbar for testimonial carousel */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

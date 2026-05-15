@@ -13,6 +13,7 @@ export default function WriteBlogPage() {
   const [isPublishing, setIsPublishing] = useState(false);
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder: 'Start writing your campus story...' })

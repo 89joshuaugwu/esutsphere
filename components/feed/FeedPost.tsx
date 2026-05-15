@@ -1,72 +1,204 @@
-"use client";
-import { useState } from "react";
-import FeedPost from "@/components/feed/FeedPost";
-import { PenSquare } from "lucide-react";
-import Link from "next/link";
-import { motion } from "motion/react";
+'use client';
 
-const MOCK_POSTS = [
-  {
-    id: "p1",
-    authorName: "John Doe",
-    authorUsername: "johndoe",
-    timeAgo: "2h ago",
-    title: "How to survive CSC 201 Project Defense",
-    excerpt: "I just finished my CSC 201 defense and here are some quick tips. The lecturers usually look out for how well you can explain your code, not just if it runs. Make sure you understand every single function you wrote.",
-    likesCount: 142,
-    commentsCount: 24,
-  },
-  {
-    id: "p2",
-    authorName: "Jane Smith",
-    authorUsername: "janesmith",
-    timeAgo: "5h ago",
-    title: "Just uploaded MTH 201 Past Questions",
-    excerpt: "Hey guys, I've compiled the past questions for General Mathematics II from 2018 to 2022. It's now available in the library section. Go check it out before the CA next week!",
-    likesCount: 89,
-    commentsCount: 12,
-  }
+import { useState } from 'react';
+import Link from 'next/link';
+import { motion } from 'motion/react';
+import {
+  Heart,
+  Flame,
+  Lightbulb,
+  Laugh,
+  Sparkles,
+  MessageCircle,
+  Share2,
+  Bookmark,
+  MoreHorizontal,
+} from 'lucide-react';
+import type { FeedPostData, ReactionType } from '@/types';
+
+interface FeedPostProps {
+  post: FeedPostData;
+}
+
+const REACTION_CONFIG: {
+  type: ReactionType;
+  emoji: string;
+  icon: React.ElementType;
+  activeClass: string;
+}[] = [
+  { type: 'like', emoji: '👍', icon: Heart, activeClass: 'bg-brand/12 border-brand/30 text-brand-light' },
+  { type: 'love', emoji: '❤️', icon: Heart, activeClass: 'bg-red-500/10 border-red-500/25 text-red-400' },
+  { type: 'fire', emoji: '🔥', icon: Flame, activeClass: 'bg-orange-500/10 border-orange-500/25 text-orange-400' },
+  { type: 'insightful', emoji: '💡', icon: Lightbulb, activeClass: 'bg-yellow-500/10 border-yellow-500/25 text-yellow-400' },
+  { type: 'funny', emoji: '😂', icon: Laugh, activeClass: 'bg-cyan/10 border-cyan/25 text-cyan-light' },
 ];
 
-export default function FeedPage() {
-  const [posts, setPosts] = useState(MOCK_POSTS);
-  const [isLoading, setIsLoading] = useState(false);
+export default function FeedPost({ post }: FeedPostProps) {
+  const [activeReaction, setActiveReaction] = useState<ReactionType | null>(null);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [showFullContent, setShowFullContent] = useState(false);
 
-  const loadMore = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setPosts([...posts, ...MOCK_POSTS.map(p => ({ ...p, id: p.id + Math.random() }))]);
-      setIsLoading(false);
-    }, 1000);
+  const displayContent = post.excerpt || post.content;
+  const isTruncatable = displayContent.length > 280;
+
+  const handleReaction = (type: ReactionType) => {
+    setActiveReaction(prev => (prev === type ? null : type));
+  };
+
+  const formatTime = (timestamp: FeedPostData['createdAt']) => {
+    if (!timestamp) return 'just now';
+    const seconds = timestamp?.seconds;
+    if (!seconds) return 'just now';
+    const diff = Math.floor((Date.now() / 1000) - seconds);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-10">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="font-display text-4xl text-text-primary">Campus Feed</h1>
-        <Link 
-          href="/blog/write" 
-          className="h-10 px-4 bg-brand/10 text-brand-light font-medium rounded-lg hover:bg-brand/20 flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(124,58,237,0.15)]"
+    <motion.article
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="bg-[rgba(20,20,38,0.7)] border border-white/[0.07] rounded-2xl p-[18px_20px] mb-3 transition-[border-color] duration-200 hover:border-white/[0.11]"
+    >
+      {/* Post Header */}
+      <div className="flex items-start justify-between mb-3">
+        <Link
+          href={`/profile/${post.authorUsername}`}
+          className="flex items-center gap-2.5 group"
         >
-          <PenSquare className="w-4 h-4" /> Write Post
+          <div className="w-10 h-10 rounded-full bg-bg-surface-3 border-2 border-white/[0.08] overflow-hidden flex-shrink-0">
+            {post.authorAvatar ? (
+              <img src={post.authorAvatar} alt={post.authorName} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-text-muted text-sm font-semibold">
+                {post.authorName?.[0]?.toUpperCase() || '?'}
+              </div>
+            )}
+          </div>
+          <div>
+            <span className="text-sm font-bold text-text-primary group-hover:text-brand-light transition-colors flex items-center gap-1.5">
+              {post.authorName}
+            </span>
+            <span className="text-xs text-text-disabled">
+              <span className="text-text-muted font-medium">@{post.authorUsername}</span>
+              {' · '}
+              {formatTime(post.createdAt)}
+            </span>
+          </div>
         </Link>
-      </div>
-
-      <div className="space-y-0">
-        {posts.map(post => (
-          <FeedPost key={post.id} post={post} />
-        ))}
-      </div>
-
-      <div className="text-center pt-4">
-        <button 
-          onClick={loadMore}
-          disabled={isLoading}
-          className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-text-secondary hover:text-white hover:bg-white/10 transition-all text-sm font-medium disabled:opacity-50"
-        >
-          {isLoading ? "Loading..." : "Load More"}
+        <button className="w-8 h-8 rounded-[7px] flex items-center justify-center text-text-disabled hover:bg-white/[0.06] hover:text-text-muted transition-all">
+          <MoreHorizontal className="w-4 h-4" />
         </button>
       </div>
-    </div>
+
+      {/* Department Badge */}
+      {post.category && (
+        <div className="mb-3">
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-cyan/10 text-cyan border border-cyan/20">
+            {post.category.replace('_', ' ').toUpperCase()}
+          </span>
+        </div>
+      )}
+
+      {/* Post Title */}
+      {post.title && (
+        <h3 className="text-base font-bold text-text-primary mb-2 leading-snug hover:text-brand-light transition-colors cursor-pointer">
+          {post.title}
+        </h3>
+      )}
+
+      {/* Post Body */}
+      <div className="mb-3">
+        <p className={`text-sm text-text-secondary leading-[22px] ${!showFullContent && isTruncatable ? 'line-clamp-4' : ''}`}>
+          {displayContent}
+        </p>
+        {isTruncatable && !showFullContent && (
+          <button
+            onClick={() => setShowFullContent(true)}
+            className="text-[13px] font-semibold text-brand mt-1 hover:text-brand-light transition-colors"
+          >
+            Read more
+          </button>
+        )}
+      </div>
+
+      {/* Attached Doc Preview */}
+      {post.attachedDocId && (
+        <Link
+          href={`/library/${post.attachedDocId}`}
+          className="flex items-center gap-3 bg-[#111120] border border-white/[0.08] rounded-xl p-3 mb-3 hover:border-brand/30 transition-[border-color]"
+        >
+          <div className="w-2 h-2 rounded-full bg-brand-light flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-text-primary truncate">{post.attachedDocTitle}</p>
+            <p className="text-[11px] text-text-muted">{post.attachedDocCourseCode}</p>
+          </div>
+          <span className="text-text-disabled text-sm">→</span>
+        </Link>
+      )}
+
+      {/* Tags */}
+      {post.tags && post.tags.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap mb-3">
+          {post.tags.map(tag => (
+            <span
+              key={tag}
+              className="text-xs font-medium text-text-muted bg-white/[0.04] rounded-full px-2.5 py-0.5 hover:bg-brand/10 hover:text-brand-light transition-all cursor-pointer"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Reactions + Actions Bar */}
+      <div className="flex items-center gap-1 pt-3 border-t border-white/[0.05]">
+        {/* Reaction buttons */}
+        {REACTION_CONFIG.map(({ type, emoji }) => (
+          <button
+            key={type}
+            onClick={() => handleReaction(type)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all duration-150 select-none
+              ${activeReaction === type
+                ? REACTION_CONFIG.find(r => r.type === type)?.activeClass
+                : 'text-text-muted hover:bg-white/[0.05] hover:text-text-secondary'
+              }
+              border border-transparent ${activeReaction === type ? '' : 'hover:border-white/[0.08]'}
+              active:scale-[1.3] active:transition-transform
+            `}
+          >
+            <span className="text-base">{emoji}</span>
+            <span>{type === 'like' ? post.likesCount : ''}</span>
+          </button>
+        ))}
+
+        {/* Separator */}
+        <div className="w-px h-5 bg-white/[0.06] mx-0.5" />
+
+        {/* Comment */}
+        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-text-muted text-[13px] font-medium hover:bg-white/[0.05] hover:text-text-secondary transition-all">
+          <MessageCircle className="w-4 h-4" />
+          <span>{post.commentsCount}</span>
+        </button>
+
+        {/* Share */}
+        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-text-muted text-[13px] font-medium hover:bg-white/[0.05] hover:text-text-secondary transition-all">
+          <Share2 className="w-4 h-4" />
+        </button>
+
+        {/* Bookmark */}
+        <button
+          onClick={() => setIsBookmarked(!isBookmarked)}
+          className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all
+            ${isBookmarked ? 'text-gold' : 'text-text-muted hover:bg-white/[0.05] hover:text-text-secondary'}
+          `}
+        >
+          <Bookmark className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} />
+        </button>
+      </div>
+    </motion.article>
   );
 }
