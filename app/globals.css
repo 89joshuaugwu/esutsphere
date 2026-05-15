@@ -344,3 +344,17 @@ body {
   background: rgba(255,255,255,0.08); margin: 40px 0;
 }
 .blog-article-body strong { color: #F8FAFC; font-weight: 700; }
+
+/* ─── Admin Page Animations ──────────────────────────────────── */
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Light mode admin overrides */
+[data-theme="light"] .admin-shell,
+[data-theme="light"] [style*="background: rgba(15,15,26"],
+[data-theme="light"] [style*="background: #080C14"],
+[data-theme="light"] [style*="background: rgba(8,8,16"] {
+  color-scheme: light;
+}

@@ -321,3 +321,27 @@ export interface FeedPostData {
   attachedDocType?: ContentType;
   attachedDocCourseCode?: string;
 }
+
+// ─── ADMIN LOG ──────────────────────────────────────────────────
+export interface AdminLog {
+  id: string;
+  adminId: string;
+  adminName: string;
+  adminRole: 'super_admin' | 'class_admin';
+  action: AdminAction;
+  targetId: string;
+  targetType: 'user' | 'document' | 'post' | 'report' | 'setting';
+  details: Record<string, unknown>;
+  timestamp: Timestamp;
+}
+
+export type AdminAction =
+  | 'approve_user'
+  | 'reject_user'
+  | 'assign_class_admin'
+  | 'remove_class_admin'
+  | 'suspend_user'
+  | 'remove_content'
+  | 'resolve_report'
+  | 'feature_content'
+  | 'update_settings';
