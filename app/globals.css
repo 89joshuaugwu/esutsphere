@@ -52,11 +52,107 @@ body {
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
   font-family: var(--font-ui);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* ─── Light Mode Overrides ────────────────────────────────────── */
+[data-theme="light"] {
+  --color-bg-base:      #F8FAFC;
+  --color-bg-surface-1: #FFFFFF;
+  --color-bg-surface-2: #F1F5F9;
+  --color-bg-surface-3: #E2E8F0;
+
+  --color-text-primary:   #0F172A;
+  --color-text-secondary: #334155;
+  --color-text-muted:     #64748B;
+  --color-text-disabled:  #94A3B8;
+
+  --color-brand:       #7C3AED;
+  --color-brand-light: #6D28D9;
+  --color-brand-dim:   #8B5CF6;
+}
+
+/* Light: adjust inline rgba-based backgrounds used throughout components */
+[data-theme="light"] .bg-bg-base\/50 {
+  background: rgba(241, 245, 249, 0.5) !important;
+}
+
+/* Light: locked section overlay */
+[data-theme="light"] .locked-section::after {
+  background: rgba(248,250,252,0.5);
+}
+
+/* Light: blog article body */
+[data-theme="light"] .blog-article-body {
+  color: #334155;
+}
+[data-theme="light"] .blog-article-body h1,
+[data-theme="light"] .blog-article-body h2,
+[data-theme="light"] .blog-article-body h3,
+[data-theme="light"] .blog-article-body strong {
+  color: #0F172A;
+}
+[data-theme="light"] .blog-article-body blockquote {
+  background: rgba(124,58,237,0.04);
+  color: #475569;
+}
+[data-theme="light"] .blog-article-body code {
+  background: rgba(124,58,237,0.08);
+}
+[data-theme="light"] .blog-article-body pre {
+  background: #F1F5F9;
+  border-color: #E2E8F0;
+  color: #475569;
+}
+
 
 /* ─── Utility: hide scrollbar ─────────────────────────────────── */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Light Mode: Component Surface Overrides ─────────────────── */
+/* Cards, panels, modals that use hardcoded dark backgrounds */
+[data-theme="light"] [style*="rgba(18,18,32"] {
+  background-color: rgba(255,255,255,0.85) !important;
+}
+[data-theme="light"] [style*="rgba(8,8,16"] {
+  background-color: rgba(241,245,249,0.95) !important;
+}
+[data-theme="light"] [style*="rgba(15,15,26"] {
+  background-color: rgba(248,250,252,0.9) !important;
+}
+[data-theme="light"] [style*="rgba(22,22,42"] {
+  background-color: rgba(255,255,255,0.98) !important;
+}
+
+/* Sidebar, TopNav, BottomTabBar dark glass backgrounds */
+[data-theme="light"] [class*="bg-\\[\\#0F0F1A\\]"],
+[data-theme="light"] [class*="bg-\\[\\#0f0f1a\\]"] {
+  background-color: #FFFFFF !important;
+}
+
+/* Light mode border contrast */
+[data-theme="light"] [class*="border-white\\/"] {
+  border-color: rgba(0,0,0,0.08) !important;
+}
+
+/* Tailwind Arbitrary Value Overrides — common inline dark surface classes */
+[data-theme="light"] .bg-bg-base { background-color: #F8FAFC; }
+[data-theme="light"] .bg-bg-surface-1 { background-color: #FFFFFF; }
+[data-theme="light"] .bg-bg-surface-2 { background-color: #F1F5F9; }
+[data-theme="light"] .bg-bg-surface-3 { background-color: #E2E8F0; }
+
+/* Selection */
+[data-theme="light"] ::selection {
+  background: rgba(124,58,237,0.2);
+  color: #0F172A;
+}
+
+/* Scrollbar for light mode */
+[data-theme="light"] ::-webkit-scrollbar { width: 8px; }
+[data-theme="light"] ::-webkit-scrollbar-track { background: #F1F5F9; }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
 /* ─── TopNav Notification Bell ────────────────────────────────── */
 @keyframes dot-pulse {

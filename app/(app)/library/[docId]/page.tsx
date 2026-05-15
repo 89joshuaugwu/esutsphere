@@ -26,39 +26,39 @@ export default function DocumentPreviewPage({ params }: { params: Promise<{ docI
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-8">
+    <div className="space-y-4 md:space-y-6 pb-20 md:pb-8">
       {/* Navigation */}
       <button 
         onClick={() => router.back()} 
-        className="text-text-muted hover:text-text-primary flex items-center gap-2 text-sm transition-colors mb-4"
+        className="text-text-muted hover:text-text-primary flex items-center gap-2 text-sm transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> Back to Library
       </button>
 
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl text-text-primary mb-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-display text-[22px] md:text-3xl text-text-primary mb-1 break-words">
             MTH101 General Mathematics I Notes
           </h1>
-          <p className="text-text-muted text-sm">
+          <p className="text-text-muted text-[13px] md:text-sm">
             Uploaded by @johndoe • PDF • 2.5MB
           </p>
         </div>
-        <button className="h-10 px-4 bg-brand/10 text-brand-light font-medium rounded-lg hover:bg-brand/20 flex items-center gap-2 transition-all">
+        <button className="h-9 md:h-10 px-4 bg-brand/10 text-brand-light font-medium rounded-lg hover:bg-brand/20 flex items-center gap-2 transition-all shrink-0 text-sm">
           <Download className="w-4 h-4" /> Download
         </button>
       </div>
 
-      {/* PDF Viewer Container */}
-      <div className="pdf-viewer-wrapper bg-[#0F0F1A] border border-white/10 rounded-[14px] overflow-hidden relative shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
+      {/* PDF Viewer Container — overflow contained */}
+      <div className="bg-[#0F0F1A] border border-white/10 rounded-[14px] overflow-hidden relative shadow-[0_24px_80px_rgba(0,0,0,0.5)]">
         
         {/* Toolbar */}
-        <div className="pdf-toolbar bg-[#0f0f1a]/95 backdrop-blur-[8px] border-b border-white/5 p-3 flex items-center justify-between sticky top-0 z-10">
-          <span className="pdf-page-count font-medium text-[13px] text-text-muted">
+        <div className="bg-[#0f0f1a]/95 backdrop-blur-[8px] border-b border-white/5 p-2.5 md:p-3 flex items-center justify-between sticky top-0 z-10">
+          <span className="font-medium text-[12px] md:text-[13px] text-text-muted">
             {numPages ? `${numPages} Pages` : 'Loading...'}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 md:gap-2">
             <button 
               onClick={() => setScale(s => Math.max(0.5, s - 0.2))} 
               className="w-8 h-8 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center text-text-muted hover:text-white transition-colors"
@@ -77,39 +77,44 @@ export default function DocumentPreviewPage({ params }: { params: Promise<{ docI
           </div>
         </div>
 
-        {/* Scrollable Canvas Area */}
-        <div className="pdf-canvas-area p-5 overflow-y-auto max-h-[75vh] flex flex-col items-center gap-4 bg-bg-base/50">
-          <Document 
-            file={MOCK_PDF} 
-            onLoadSuccess={onDocumentLoadSuccess}
-            loading={
-              <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3">
-                <span className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm">Loading PDF document...</p>
-              </div>
-            }
-            error={<div className="p-12 text-center text-text-muted">Failed to load PDF document.</div>}
+        {/* Scrollable Canvas Area — both axes for zoom */}
+        <div className="overflow-auto max-h-[70vh] md:max-h-[75vh] bg-bg-base/50">
+          <div
+            className="p-4 md:p-5 flex flex-col items-center gap-4"
+            style={{ minWidth: scale > 1 ? `${Math.round(600 * scale + 40)}px` : 'auto' }}
           >
-            {Array.from(new Array(numPages || 0), (_, index) => (
-              <div 
-                key={`page_${index + 1}`} 
-                className="mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)] rounded bg-white overflow-hidden"
-              >
-                <Page 
-                  pageNumber={index + 1} 
-                  scale={scale} 
-                  renderTextLayer={false}
-                  renderAnnotationLayer={false}
-                  loading={
-                    <div 
-                      style={{ width: 600 * scale, height: 800 * scale }} 
-                      className="bg-white/5 animate-pulse" 
-                    />
-                  }
-                />
-              </div>
-            ))}
-          </Document>
+            <Document 
+              file={MOCK_PDF} 
+              onLoadSuccess={onDocumentLoadSuccess}
+              loading={
+                <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3">
+                  <span className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+                  <p className="text-sm">Loading PDF document...</p>
+                </div>
+              }
+              error={<div className="p-12 text-center text-text-muted">Failed to load PDF document.</div>}
+            >
+              {Array.from(new Array(numPages || 0), (_, index) => (
+                <div 
+                  key={`page_${index + 1}`} 
+                  className="mb-4 md:mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)] rounded bg-white overflow-hidden"
+                >
+                  <Page 
+                    pageNumber={index + 1} 
+                    scale={scale} 
+                    renderTextLayer={false}
+                    renderAnnotationLayer={false}
+                    loading={
+                      <div 
+                        style={{ width: 600 * scale, height: 800 * scale }} 
+                        className="bg-white/5 animate-pulse" 
+                      />
+                    }
+                  />
+                </div>
+              ))}
+            </Document>
+          </div>
         </div>
       </div>
     </div>

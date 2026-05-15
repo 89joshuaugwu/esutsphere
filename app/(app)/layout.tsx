@@ -2,6 +2,7 @@
 import TopNav from "@/components/layout/TopNav";
 import Sidebar from "@/components/layout/Sidebar";
 import BottomTabBar from "@/components/layout/BottomTabBar";
+import LandingNav from "@/components/landing/LandingNav";
 import { useAuth } from "@/hooks/useAuth";
 import { ShieldAlert } from "lucide-react";
 
@@ -10,9 +11,34 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const isLoggedIn = !!user;
   const isPending = user && user.approvalStatus !== "approved";
 
+  // While auth is loading, show a minimal shell to avoid flicker
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg-base">
+        <span className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // ─── Non-authenticated: show landing nav, no sidebar/bottom bar ───
+  if (!isLoggedIn) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <LandingNav />
+        <main className="flex-1 pt-[68px]">
+          <div className="px-4 md:px-7 lg:px-8 py-0">
+            {children}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ─── Authenticated: full shell with TopNav + Sidebar + BottomTabBar ───
   return (
     <div className="flex flex-col min-h-screen">
       <TopNav />

@@ -1,8 +1,9 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { PenLine, Heart, MessageCircle, Eye, Clock } from "lucide-react";
+import { PenLine, Heart, MessageCircle, Eye, Clock, LogIn } from "lucide-react";
 import { POST_CATEGORIES } from "@/constants/departments";
+import { useAuth } from "@/hooks/useAuth";
 import type { Post, PostCategory } from "@/types";
 
 // ── Mock Data ─────────────────────────────────────────────────────
@@ -40,6 +41,8 @@ const ALL_CATEGORIES = [{ value: "all", label: "All", emoji: "📋" }, ...POST_C
 
 export default function BlogListingPage() {
   const [activeCategory, setActiveCategory] = useState("all");
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
 
   const featuredPost = MOCK_POSTS.find(p => p.isFeatured);
   const filteredPosts = useMemo(() => {
@@ -61,12 +64,21 @@ export default function BlogListingPage() {
               Stay updated with the latest news, student stories, and academic guides across ESUT.
             </p>
           </div>
-          <Link
-            href="/blog/write"
-            className="flex items-center gap-2 bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold px-5 py-2.5 rounded-[10px] shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:-translate-y-[2px] hover:shadow-[0_10px_32px_rgba(124,58,237,0.5)] transition-all duration-200 whitespace-nowrap"
-          >
-            <PenLine className="w-4 h-4" /> Write Post
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/blog/write"
+              className="flex items-center gap-2 bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold px-5 py-2.5 rounded-[10px] shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:-translate-y-[2px] hover:shadow-[0_10px_32px_rgba(124,58,237,0.5)] transition-all duration-200 whitespace-nowrap"
+            >
+              <PenLine className="w-4 h-4" /> Write Post
+            </Link>
+          ) : (
+            <Link
+              href="/signup"
+              className="flex items-center gap-2 bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold px-5 py-2.5 rounded-[10px] shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:-translate-y-[2px] hover:shadow-[0_10px_32px_rgba(124,58,237,0.5)] transition-all duration-200 whitespace-nowrap"
+            >
+              <LogIn className="w-4 h-4" /> Sign Up to Write
+            </Link>
+          )}
         </div>
       </div>
 

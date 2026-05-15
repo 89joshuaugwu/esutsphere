@@ -10,7 +10,7 @@ import { doc, getDoc } from "firebase/firestore";
  * Per ESUT_SPHERE_AUTH.md §10: /, /login, /signup, /blog, /library, /profile are public.
  */
 const PUBLIC_ROUTES = ["/", "/login", "/signup"];
-const PUBLIC_PREFIXES = ["/blog", "/library", "/profile"];
+const PUBLIC_PREFIXES = ["/blog", "/library", "/profile", "/explore"];
 
 /**
  * Auth pages that logged-in users should be redirected away from.

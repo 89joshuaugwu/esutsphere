@@ -75,9 +75,7 @@ export const DEPARTMENTS: DepartmentInfo[] = [
   { name: 'Psychology', faculty: 'Social Sciences & Humanities', emoji: '🧠' },
   { name: 'English and Literary Studies', faculty: 'Social Sciences & Humanities', emoji: '✍️' },
   { name: 'Economics', faculty: 'Social Sciences & Humanities', emoji: '📈' },
-
-  // Other Departments
-  { name: 'Human Nutrition and Dietetics', faculty: 'Other', emoji: '🥗' },
+  { name: 'Human Nutrition and Dietetics', faculty: 'Social Sciences & Humanities', emoji: '🥗' },
 ];
 
 export const DEPARTMENT_NAMES = DEPARTMENTS.map(d => d.name);

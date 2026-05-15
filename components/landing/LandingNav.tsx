@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Bell, Home, BookOpen, Users, PenLine, ArrowRight, LogIn } from "lucide-react";
+import { Menu, X, Bell, Home, BookOpen, Hash, PenLine, ArrowRight, LogIn, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useAuth } from "@/hooks/useAuth";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
   { label: "Library", href: "/library", icon: BookOpen },
-  { label: "Community", href: "/feed", icon: Users },
+  { label: "Explore", href: "/explore", icon: Hash },
   { label: "Blog", href: "/blog", icon: PenLine },
 ];
 
@@ -17,6 +18,8 @@ export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeLink, setActiveLink] = useState("/");
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -74,27 +77,29 @@ export default function LandingNav() {
             })}
           </div>
 
-          {/* Right — Bell + Sign In */}
+          {/* Right — auth-aware */}
           <div className="hidden md:flex items-center gap-1.5 ml-1">
-            <button className="relative w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-white/[0.07] transition-all">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-brand border border-bg-base" />
-            </button>
-            <Link
-              href="/login"
-              className="flex items-center gap-1.5 bg-brand hover:bg-brand-light text-white text-[13px] font-semibold ml-0.5 pl-3.5 pr-4 py-[7px] rounded-full border border-brand-light/40 transition-all duration-200 hover:shadow-[0_0_20px_rgba(124,58,237,0.5)] hover:-translate-y-px"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              Sign In
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 bg-brand hover:bg-brand-light text-white text-[13px] font-semibold ml-0.5 pl-3.5 pr-4 py-[7px] rounded-full border border-brand-light/40 transition-all duration-200 hover:shadow-[0_0_20px_rgba(124,58,237,0.5)] hover:-translate-y-px"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 bg-brand hover:bg-brand-light text-white text-[13px] font-semibold ml-0.5 pl-3.5 pr-4 py-[7px] rounded-full border border-brand-light/40 transition-all duration-200 hover:shadow-[0_0_20px_rgba(124,58,237,0.5)] hover:-translate-y-px"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Sign In
+              </Link>
+            )}
           </div>
 
-          {/* Mobile — Bell + Hamburger */}
+          {/* Mobile — Hamburger */}
           <div className="flex md:hidden items-center gap-1 ml-auto pr-1">
-            <button className="relative w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary transition-all">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-brand border border-bg-base" />
-            </button>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="w-9 h-9 rounded-full flex items-center justify-center text-text-muted hover:bg-white/[0.08] hover:text-text-primary transition-all"
@@ -148,16 +153,27 @@ export default function LandingNav() {
                 })}
               </div>
 
-              {/* Sign In */}
+              {/* Auth-aware CTA */}
               <div className="p-3 pt-0">
-                <Link
-                  href="/login"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-light text-white text-[15px] font-semibold py-3 rounded-xl transition-all duration-200"
-                >
-                  <ArrowRight className="w-4 h-4" />
-                  Sign In
-                </Link>
+                {isLoggedIn ? (
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-light text-white text-[15px] font-semibold py-3 rounded-xl transition-all duration-200"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </Link>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full bg-brand hover:bg-brand-light text-white text-[15px] font-semibold py-3 rounded-xl transition-all duration-200"
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                    Sign In
+                  </Link>
+                )}
               </div>
             </motion.div>
           </motion.div>

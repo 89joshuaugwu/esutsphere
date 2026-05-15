@@ -3,10 +3,11 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme, type Theme } from "@/hooks/useTheme";
 import {
   Upload, Users, Download, Sparkles, PenSquare, User, BarChart3,
   Bookmark, Settings, Eye, Heart, Clock, Trash2, Edit, FileText,
-  Camera, Lock, Bell as BellIcon,
+  Camera, Lock, Bell as BellIcon, Sun, Moon, Monitor,
 } from "lucide-react";
 
 function useCountUp(target: number, duration = 1200) {
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<DashTab>(initialTab);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("profile");
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -352,6 +354,40 @@ export default function DashboardPage() {
             {/* Account Settings */}
             {settingsTab === "account" && (
               <div className="space-y-5">
+                {/* Theme Toggle */}
+                <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-2xl overflow-hidden">
+                  <div className="px-[22px] py-[18px] border-b border-white/[0.06] text-[15px] font-bold text-text-primary">Appearance</div>
+                  <div className="p-[22px]">
+                    <label className="text-[13px] font-medium text-text-secondary block mb-3">Theme</label>
+                    <div className="flex gap-2">
+                      {([
+                        { id: 'dark' as Theme, label: 'Dark', icon: Moon, desc: 'Dark background' },
+                        { id: 'light' as Theme, label: 'Light', icon: Sun, desc: 'Light background' },
+                        { id: 'system' as Theme, label: 'System', icon: Monitor, desc: 'Match device' },
+                      ]).map(opt => {
+                        const Icon = opt.icon;
+                        const isActive = theme === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => setTheme(opt.id)}
+                            className={`flex-1 flex flex-col items-center gap-2 py-4 rounded-xl border transition-all duration-200 ${
+                              isActive
+                                ? 'bg-brand/[0.14] border-brand/40 text-brand-light shadow-[0_0_16px_rgba(124,58,237,0.15)]'
+                                : 'bg-white/[0.02] border-white/[0.07] text-text-muted hover:bg-white/[0.05] hover:text-text-secondary'
+                            }`}
+                          >
+                            <Icon className={`w-5 h-5 ${isActive ? 'text-brand-light' : ''}`} />
+                            <span className="text-[13px] font-semibold">{opt.label}</span>
+                            <span className="text-[10px] text-text-disabled">{opt.desc}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Info */}
                 <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-2xl overflow-hidden">
                   <div className="px-[22px] py-[18px] border-b border-white/[0.06] text-[15px] font-bold text-text-primary">Account</div>
                   <div className="p-[22px] space-y-5">

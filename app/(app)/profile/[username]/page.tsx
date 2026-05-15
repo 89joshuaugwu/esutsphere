@@ -2,7 +2,8 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { MapPin, Calendar, MessageCircle, Camera, Upload, PenLine, Heart, Download, Eye, FileText } from "lucide-react";
+import { MapPin, Calendar, MessageCircle, Camera, Upload, PenLine, Heart, Download, Eye, FileText, LogIn, UserPlus } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const BADGE_DATA: Record<string, { emoji: string; name: string; desc: string; color: string; rgb: string }> = {
   top_contributor: { emoji: "🏆", name: "Top Contributor", desc: "Uploaded 50+ documents", color: "#F59E0B", rgb: "245,158,11" },
@@ -16,6 +17,45 @@ const BADGE_DATA: Record<string, { emoji: string; name: string; desc: string; co
 export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = use(params);
   const [activeTab, setActiveTab] = useState<"uploads" | "posts" | "badges">("uploads");
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
+
+  // ── Auth gate: unauthenticated users cannot view profiles ──
+  if (!isLoggedIn) {
+    return (
+      <div className="-mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 min-h-[80vh] flex items-center justify-center relative overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(124,58,237,0.15)_0%,rgba(6,182,212,0.08)_100%)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-brand/[0.06] blur-[100px]" />
+
+        <div className="relative z-10 text-center px-6 max-w-md mx-auto" style={{ animation: "card-enter 0.5s both" }}>
+          <div className="w-20 h-20 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center mx-auto mb-6">
+            <UserPlus className="w-9 h-9 text-brand-light" />
+          </div>
+          <h2 className="font-display text-[26px] md:text-[32px] text-text-primary mb-3">
+            Join ESUTSphere
+          </h2>
+          <p className="text-sm md:text-[15px] text-text-muted leading-relaxed mb-8">
+            Sign in or create an account to view <strong className="text-text-secondary">@{username}</strong>&apos;s profile, follow them, and connect with the community.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/login"
+              className="h-11 px-6 rounded-[10px] bg-brand text-white text-sm font-bold flex items-center justify-center gap-2 shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:-translate-y-[2px] hover:shadow-[0_10px_32px_rgba(124,58,237,0.5)] transition-all"
+            >
+              <LogIn className="w-4 h-4" /> Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="h-11 px-6 rounded-[10px] bg-white/[0.06] border border-white/[0.1] text-text-primary text-sm font-bold flex items-center justify-center gap-2 hover:bg-white/[0.1] transition-all"
+            >
+              <UserPlus className="w-4 h-4" /> Create Account
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Mock Profile
   const profile = {
@@ -36,7 +76,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     badges: ["top_contributor", "note_legend", "research_king", "consistent"] as string[],
   };
 
-  const isOwner = false; // Would come from auth context
+  const isOwner = user?.username === username;
 
   const tabs = [
     { key: "uploads" as const, label: "Uploads", count: profile.uploads },

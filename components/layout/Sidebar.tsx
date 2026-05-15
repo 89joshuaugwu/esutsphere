@@ -11,7 +11,7 @@ const NAV_GROUPS = [
   {
     label: "Main",
     items: [
-      { label: "Home", href: "/feed", icon: Home },
+      { label: "Feed", href: "/feed", icon: Home },
       { label: "Blog", href: "/blog", icon: BookOpen },
       { label: "Explore", href: "/explore", icon: Hash },
       { label: "Notifications", href: "/notifications", icon: Bell },

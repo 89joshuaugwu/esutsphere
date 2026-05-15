@@ -3,6 +3,7 @@ import { Geist, Instrument_Serif } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import AuthProvider from "@/components/auth/AuthProvider";
 import { AuthProvider as AuthContextProvider } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/useTheme";
 import "./globals.css";
 
 const geist = Geist({
@@ -62,14 +63,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${instrumentSerif.variable} antialiased dark`}
+      data-theme="dark"
+      suppressHydrationWarning
+      className={`${geist.variable} ${instrumentSerif.variable} antialiased`}
     >
       <body className="min-h-screen bg-bg-base text-text-primary font-ui selection:bg-brand selection:text-white">
-        <AuthContextProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </AuthContextProvider>
+        <ThemeProvider>
+          <AuthContextProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </AuthContextProvider>
+        </ThemeProvider>
         <Toaster position="top-center" />
       </body>
     </html>

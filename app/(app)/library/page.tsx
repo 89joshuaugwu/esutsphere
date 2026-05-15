@@ -3,9 +3,10 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import DocumentCard from "@/components/library/DocumentCard";
 import UploadModal from "@/components/library/UploadModal";
-import { Search, Plus, ChevronDown, X, SlidersHorizontal, FileText } from "lucide-react";
+import { Search, Plus, ChevronDown, X, SlidersHorizontal, FileText, LogIn } from "lucide-react";
 import { Document, ContentType } from "@/types";
 import { CONTENT_TYPES, LEVELS, DEPARTMENTS } from "@/constants/departments";
+import { useAuth } from "@/hooks/useAuth";
 
 // ── Mock Data ─────────────────────────────────────────────────────
 const MOCK_DOCS: Document[] = [
@@ -38,6 +39,8 @@ const SORT_OPTIONS = [
 
 export default function LibraryPage() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<ContentType | "">("");
   const [selectedLevel, setSelectedLevel] = useState("");
@@ -115,12 +118,21 @@ export default function LibraryPage() {
                 </span>
               </div>
             </div>
-            <button
-              onClick={() => setIsUploadOpen(true)}
-              className="flex items-center gap-2 bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold px-5 py-2.5 rounded-[10px] shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:-translate-y-[2px] hover:shadow-[0_10px_32px_rgba(124,58,237,0.5)] transition-all duration-200 whitespace-nowrap"
-            >
-              <Plus className="w-4 h-4" /> Upload Material
-            </button>
+            {isLoggedIn ? (
+              <button
+                onClick={() => setIsUploadOpen(true)}
+                className="flex items-center gap-2 bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold px-5 py-2.5 rounded-[10px] shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:-translate-y-[2px] hover:shadow-[0_10px_32px_rgba(124,58,237,0.5)] transition-all duration-200 whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" /> Upload Material
+              </button>
+            ) : (
+              <Link
+                href="/signup"
+                className="flex items-center gap-2 bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold px-5 py-2.5 rounded-[10px] shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:-translate-y-[2px] hover:shadow-[0_10px_32px_rgba(124,58,237,0.5)] transition-all duration-200 whitespace-nowrap"
+              >
+                <LogIn className="w-4 h-4" /> Sign Up to Upload
+              </Link>
+            )}
           </div>
         </div>
 
