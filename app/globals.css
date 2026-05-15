@@ -54,6 +54,10 @@ body {
   font-family: var(--font-ui);
 }
 
+/* ─── Utility: hide scrollbar ─────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* ─── TopNav Notification Bell ────────────────────────────────── */
 @keyframes dot-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.4); }

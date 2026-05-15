@@ -119,11 +119,13 @@ export default function WriteBlogPage() {
 
   const toolbarBtn = (active: boolean) =>
     `w-[34px] h-[34px] rounded-[7px] flex items-center justify-center text-sm transition-all ${
-      active ? "bg-brand/[0.16] text-brand-light" : "text-text-muted hover:bg-white/[0.07] hover:text-text-primary"
+      active
+        ? "bg-brand/30 text-white ring-1 ring-brand/50 shadow-[0_0_8px_rgba(124,58,237,0.3)]"
+        : "text-text-muted hover:bg-white/[0.07] hover:text-text-primary"
     }`;
 
   return (
-    <div className="max-w-[780px] mx-auto pb-12">
+    <div className="max-w-[780px] mx-auto pb-20 md:pb-12">
       {/* Write mode top bar */}
       <div className="flex items-center justify-between py-4 -mx-4 md:-mx-7 px-4 md:px-7 border-b border-white/[0.06] mb-6">
         <Link href="/feed" className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors text-sm font-medium">

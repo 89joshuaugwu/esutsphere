@@ -43,10 +43,10 @@ export default function DashboardPage() {
   };
 
   const stats = [
-    { icon: Upload, label: "Uploads", value: user?.uploadsCount || 0, accent: "--stat-accent: linear-gradient(90deg, #7C3AED, #A855F7); --stat-icon-bg: rgba(124,58,237,0.12); --stat-icon-border: rgba(124,58,237,0.2);" },
-    { icon: Users, label: "Followers", value: user?.followersCount || 0, accent: "--stat-accent: linear-gradient(90deg, #06B6D4, #22D3EE); --stat-icon-bg: rgba(6,182,212,0.12); --stat-icon-border: rgba(6,182,212,0.2);" },
-    { icon: Download, label: "Downloads", value: user?.totalDownloads || 0, accent: "--stat-accent: linear-gradient(90deg, #F59E0B, #FCD34D); --stat-icon-bg: rgba(245,158,11,0.12); --stat-icon-border: rgba(245,158,11,0.2);" },
-    { icon: Sparkles, label: "Points", value: user?.points || 0, accent: "--stat-accent: linear-gradient(90deg, #7C3AED, #06B6D4); --stat-icon-bg: rgba(124,58,237,0.12); --stat-icon-border: rgba(124,58,237,0.2);" },
+    { icon: Upload, label: "Uploads", value: user?.uploadsCount || 0, gradient: "linear-gradient(90deg, #7C3AED, #A855F7)", iconBg: "rgba(124,58,237,0.12)", iconBorder: "rgba(124,58,237,0.2)" },
+    { icon: Users, label: "Followers", value: user?.followersCount || 0, gradient: "linear-gradient(90deg, #06B6D4, #22D3EE)", iconBg: "rgba(6,182,212,0.12)", iconBorder: "rgba(6,182,212,0.2)" },
+    { icon: Download, label: "Downloads", value: user?.totalDownloads || 0, gradient: "linear-gradient(90deg, #F59E0B, #FCD34D)", iconBg: "rgba(245,158,11,0.12)", iconBorder: "rgba(245,158,11,0.2)" },
+    { icon: Sparkles, label: "Points", value: user?.points || 0, gradient: "linear-gradient(90deg, #7C3AED, #06B6D4)", iconBg: "rgba(124,58,237,0.12)", iconBorder: "rgba(124,58,237,0.2)" },
   ];
 
   const dashTabs: { id: DashTab; label: string; icon: React.ElementType }[] = [
@@ -59,63 +59,63 @@ export default function DashboardPage() {
   const avatarUrl = user?.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || "anon"}`;
 
   return (
-    <div className="max-w-[900px] mx-auto pb-10">
+    <div className="max-w-[900px] mx-auto pb-20 md:pb-10">
       {/* Header */}
-      <div className="pt-7 pb-6">
-        <h1 className="font-display text-[clamp(24px,3vw,34px)] text-text-primary mb-1.5">
+      <div className="pt-5 md:pt-7 pb-5 md:pb-6">
+        <h1 className="font-display text-[clamp(22px,5vw,34px)] text-text-primary mb-1.5">
           {greeting()}, <span className="text-brand-light">{user?.displayName?.split(" ")[0] || "User"}</span> 👋
         </h1>
-        <p className="text-[15px] text-text-muted">Here&apos;s what&apos;s happening in your academic world today.</p>
+        <p className="text-sm md:text-[15px] text-text-muted">Here&apos;s what&apos;s happening in your academic world today.</p>
 
         {/* Quick actions */}
-        <div className="flex gap-2.5 mt-5 flex-wrap">
-          <Link href="/library" className="h-[38px] px-4 rounded-full text-[13px] font-semibold flex items-center gap-[7px] bg-brand/[0.14] text-brand-light border border-brand/30 hover:bg-brand/[0.24] transition-all">
+        <div className="flex gap-2 md:gap-2.5 mt-4 md:mt-5 flex-wrap">
+          <Link href="/library" className="h-[34px] md:h-[38px] px-3.5 md:px-4 rounded-full text-[12px] md:text-[13px] font-semibold flex items-center gap-[6px] bg-brand/[0.14] text-brand-light border border-brand/30 hover:bg-brand/[0.24] transition-all">
             <Upload className="w-3.5 h-3.5" /> Upload
           </Link>
-          <Link href="/blog/write" className="h-[38px] px-4 rounded-full text-[13px] font-semibold flex items-center gap-[7px] bg-cyan/10 text-cyan border border-cyan/25 hover:bg-cyan/[0.18] transition-all">
+          <Link href="/blog/write" className="h-[34px] md:h-[38px] px-3.5 md:px-4 rounded-full text-[12px] md:text-[13px] font-semibold flex items-center gap-[6px] bg-cyan/10 text-cyan border border-cyan/25 hover:bg-cyan/[0.18] transition-all">
             <PenSquare className="w-3.5 h-3.5" /> Write
           </Link>
-          <Link href={`/profile/${user?.username || "me"}`} className="h-[38px] px-4 rounded-full text-[13px] font-semibold flex items-center gap-[7px] bg-white/[0.04] text-text-muted border border-white/[0.08] hover:bg-white/[0.08] hover:text-text-primary transition-all">
+          <Link href={`/profile/${user?.username || "me"}`} className="h-[34px] md:h-[38px] px-3.5 md:px-4 rounded-full text-[12px] md:text-[13px] font-semibold flex items-center gap-[6px] bg-white/[0.04] text-text-muted border border-white/[0.08] hover:bg-white/[0.08] hover:text-text-primary transition-all">
             <User className="w-3.5 h-3.5" /> Profile
           </Link>
         </div>
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-7">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-3.5 mb-6 md:mb-7">
         {stats.map(s => {
           const StatIcon = s.icon;
           const animatedValue = useCountUp(s.value);
           return (
             <div
               key={s.label}
-              className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] p-5 relative overflow-hidden hover:border-brand/25 hover:-translate-y-[2px] transition-all"
-              style={{ cssText: s.accent } as any}
+              className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] p-4 md:p-5 relative overflow-hidden hover:border-brand/25 hover:-translate-y-[2px] transition-all"
             >
-              <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: "var(--stat-accent)" }} />
-              <div className="w-10 h-10 rounded-[10px] flex items-center justify-center mb-3" style={{ background: "var(--stat-icon-bg)", border: "1px solid var(--stat-icon-border)" }}>
-                <StatIcon className="w-[19px] h-[19px] text-text-muted" />
+              <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: s.gradient }} />
+              <div className="w-9 h-9 md:w-10 md:h-10 rounded-[10px] flex items-center justify-center mb-2.5 md:mb-3" style={{ background: s.iconBg, border: `1px solid ${s.iconBorder}` }}>
+                <StatIcon className="w-[17px] h-[17px] md:w-[19px] md:h-[19px] text-text-muted" />
               </div>
-              <span className="font-display text-[32px] text-text-primary block mb-1 leading-none">{animatedValue.toLocaleString()}</span>
-              <span className="text-[13px] font-medium text-text-muted">{s.label}</span>
+              <span className="font-display text-[26px] md:text-[32px] text-text-primary block mb-1 leading-none">{animatedValue.toLocaleString()}</span>
+              <span className="text-[12px] md:text-[13px] font-medium text-text-muted">{s.label}</span>
             </div>
           );
         })}
       </div>
 
-      {/* Tab Nav */}
-      <div className="flex gap-0 border-b border-white/[0.07] mb-7">
+
+      {/* Tab Nav — scrollable on mobile */}
+      <div className="flex gap-0 border-b border-white/[0.07] mb-5 md:mb-7 overflow-x-auto no-scrollbar">
         {dashTabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-[22px] py-3 text-sm font-semibold border-b-2 -mb-px transition-all ${
+            className={`flex items-center gap-1.5 md:gap-2 px-3.5 md:px-[22px] py-2.5 md:py-3 text-[13px] md:text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap shrink-0 ${
               activeTab === tab.id
                 ? "text-brand-light border-brand"
                 : "text-text-disabled border-transparent hover:text-text-muted"
             }`}
           >
-            <tab.icon className="w-4 h-4" />
+            <tab.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
             {tab.label}
           </button>
         ))}
@@ -281,9 +281,9 @@ export default function DashboardPage() {
                 <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-2xl overflow-hidden">
                   <div className="px-[22px] py-[18px] border-b border-white/[0.06] text-[15px] font-bold text-text-primary">Profile Information</div>
                   <div className="p-[22px] space-y-5">
-                    {/* Photo */}
-                    <div className="flex items-center gap-5 pb-5 border-b border-white/[0.06]">
-                      <img src={avatarUrl} alt="" className="w-20 h-20 rounded-full object-cover border-[3px] border-brand/30" />
+                    {/* Profile Photo */}
+                    <div className="flex items-center gap-4 md:gap-5 pb-5 border-b border-white/[0.06]">
+                      <img src={avatarUrl} alt="" className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-[3px] border-brand/30 shrink-0" />
                       <div className="flex flex-col gap-2">
                         <button className="h-[34px] px-3.5 rounded-lg bg-brand/[0.12] border border-brand/30 text-brand-light text-[13px] font-semibold hover:bg-brand/[0.22] transition-all flex items-center gap-1.5">
                           <Camera className="w-3.5 h-3.5" /> Change Photo
@@ -291,6 +291,27 @@ export default function DashboardPage() {
                         <button className="h-[34px] px-3.5 rounded-lg bg-transparent border border-error/25 text-error text-[13px] font-medium hover:bg-error/10 transition-all">
                           Remove
                         </button>
+                      </div>
+                    </div>
+
+                    {/* Cover Photo */}
+                    <div className="pb-5 border-b border-white/[0.06]">
+                      <label className="text-[13px] font-medium text-text-secondary block mb-2.5">Cover Photo</label>
+                      <div className="w-full h-[120px] md:h-[180px] rounded-xl border-2 border-dashed border-white/[0.1] bg-white/[0.02] relative overflow-hidden group cursor-pointer hover:border-brand/30 transition-all">
+                        {user?.coverPhoto ? (
+                          <>
+                            <img src={user.coverPhoto} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button className="h-8 px-3.5 rounded-lg bg-white/15 text-text-primary text-[12px] font-semibold hover:bg-white/25 transition-all">Change</button>
+                              <button className="h-8 px-3.5 rounded-lg bg-error/15 border border-error/30 text-error text-[12px] font-semibold hover:bg-error/25 transition-all">Remove</button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full gap-1.5">
+                            <Camera className="w-5 h-5 text-text-disabled" />
+                            <span className="text-[12px] text-text-disabled">Click to upload cover photo</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     {/* Fields */}

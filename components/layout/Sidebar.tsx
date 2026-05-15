@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home, Hash, Library, Bell, User, PenSquare, Upload,
-  LayoutDashboard, Settings, Sparkles,
+  LayoutDashboard, Settings, Sparkles, BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -12,6 +12,7 @@ const NAV_GROUPS = [
     label: "Main",
     items: [
       { label: "Home", href: "/feed", icon: Home },
+      { label: "Blog", href: "/blog", icon: BookOpen },
       { label: "Explore", href: "/explore", icon: Hash },
       { label: "Notifications", href: "/notifications", icon: Bell },
       { label: "Library", href: "/library", icon: Library },
@@ -56,9 +57,11 @@ export default function Sidebar() {
               {group.label}
             </span>
             {group.items.map((item) => {
-              const isActive = item.href.startsWith("/dashboard")
-                ? pathname.startsWith("/dashboard")
-                : pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href) && !item.href.includes("?"));
+              const isActive = item.href === "/dashboard?tab=settings"
+                ? pathname.startsWith("/dashboard") && typeof window !== "undefined" && window.location.search.includes("tab=settings")
+                : item.href === "/dashboard"
+                ? pathname === "/dashboard"
+                : pathname === item.href || (item.href !== "/" && !item.href.includes("?") && pathname.startsWith(item.href));
               const Icon = item.icon;
 
               return (
@@ -85,7 +88,6 @@ export default function Sidebar() {
 
       {/* Bottom: Upload + Profile */}
       <div className="mt-auto pt-3 border-t border-white/[0.06]">
-        {/* Upload button */}
         <Link
           href="/library"
           className="w-full h-11 rounded-[10px] bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(124,58,237,0.35)] hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(124,58,237,0.5)] transition-all mb-2.5"
@@ -94,7 +96,6 @@ export default function Sidebar() {
           Upload Document
         </Link>
 
-        {/* Profile row */}
         <Link
           href={profileHref}
           className="flex items-center gap-2.5 px-[10px] py-2.5 rounded-[10px] hover:bg-white/[0.04] transition-[background] group"

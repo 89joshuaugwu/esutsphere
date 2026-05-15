@@ -13,6 +13,11 @@ const PUBLIC_ROUTES = ["/", "/login", "/signup"];
 const PUBLIC_PREFIXES = ["/blog", "/library", "/profile"];
 
 /**
+ * Auth pages that logged-in users should be redirected away from.
+ */
+const AUTH_PAGES = ["/login", "/signup"];
+
+/**
  * Onboarding routes — require Firebase auth but NOT approval.
  */
 const ONBOARDING_PREFIXES = ["/onboarding"];
@@ -70,15 +75,16 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           if (status === "rejected" && pathname !== "/login") {
             router.push("/login");
           }
-          // Pending → only allow onboarding/pending + public routes
+          // Pending → allow access to ALL pages (actions blocked by usePendingGuard)
+          // Just redirect away from auth pages and onboarding
           else if (status === "pending") {
-            if (!pathname.startsWith("/onboarding/pending") && !isPublicRoute(pathname)) {
-              router.push("/onboarding/pending");
+            if (AUTH_PAGES.includes(pathname) || isOnboardingRoute(pathname)) {
+              router.push("/feed");
             }
           }
-          // Approved → if they're on login/signup, redirect to feed
+          // Approved → redirect away from auth pages and onboarding
           else if (status === "approved") {
-            if (pathname === "/login" || pathname === "/signup") {
+            if (AUTH_PAGES.includes(pathname) || isOnboardingRoute(pathname)) {
               router.push("/feed");
             }
           }

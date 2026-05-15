@@ -1,5 +1,6 @@
 /**
  * Full ESUT department → faculty mapping.
+ * Based on 2025/2026 supplementary admission list.
  * Used in onboarding step-1, filters, and admin panels.
  */
 
@@ -10,53 +11,73 @@ export interface DepartmentInfo {
 }
 
 export const DEPARTMENTS: DepartmentInfo[] = [
+  // Faculty of Agriculture and Natural Resource Management
+  { name: 'Agronomy & Ecological Management', faculty: 'Agriculture and Natural Resource Management', emoji: '🌱' },
+  { name: 'Animal Science & Fish Management', faculty: 'Agriculture and Natural Resource Management', emoji: '🐄' },
+  { name: 'Agricultural Economics & Extension', faculty: 'Agriculture and Natural Resource Management', emoji: '🌾' },
+  { name: 'Food Science and Technology', faculty: 'Agriculture and Natural Resource Management', emoji: '🍽️' },
+
   // Faculty of Physical Sciences
   { name: 'Computer Science', faculty: 'Physical Sciences', emoji: '💻' },
-  { name: 'Industrial Chemistry', faculty: 'Physical Sciences', emoji: '🧪' },
   { name: 'Industrial Physics', faculty: 'Physical Sciences', emoji: '⚛️' },
-  { name: 'Industrial Mathematics', faculty: 'Physical Sciences', emoji: '📐' },
-  { name: 'Industrial Statistics', faculty: 'Physical Sciences', emoji: '📊' },
-  { name: 'Geology and Mining', faculty: 'Physical Sciences', emoji: '⛏️' },
-  // Faculty of Applied Natural Sciences
-  { name: 'Applied Biology', faculty: 'Applied Natural Sciences', emoji: '🧬' },
-  { name: 'Applied Biochemistry', faculty: 'Applied Natural Sciences', emoji: '🧫' },
-  { name: 'Applied Microbiology', faculty: 'Applied Natural Sciences', emoji: '🔬' },
+  { name: 'Mathematics', faculty: 'Physical Sciences', emoji: '📐' },
+  { name: 'Statistics', faculty: 'Physical Sciences', emoji: '📊' },
+  { name: 'Industrial Chemistry', faculty: 'Physical Sciences', emoji: '🧪' },
+  { name: 'Geology & Mining', faculty: 'Physical Sciences', emoji: '⛏️' },
+
   // Faculty of Engineering
-  { name: 'Electrical Engineering', faculty: 'Engineering', emoji: '⚡' },
-  { name: 'Mechanical Engineering', faculty: 'Engineering', emoji: '⚙️' },
-  { name: 'Civil Engineering', faculty: 'Engineering', emoji: '🏗️' },
-  { name: 'Agricultural Engineering', faculty: 'Engineering', emoji: '🌾' },
-  { name: 'Materials & Metallurgical Engineering', faculty: 'Engineering', emoji: '🔧' },
+  { name: 'Agricultural Engineering', faculty: 'Engineering', emoji: '🚜' },
+  { name: 'Chemical Engineering', faculty: 'Engineering', emoji: '⚗️' },
+  { name: 'Metallurgical & Materials Engineering', faculty: 'Engineering', emoji: '🔧' },
+  { name: 'Mechatronics Engineering', faculty: 'Engineering', emoji: '🤖' },
+  { name: 'Biomedical Engineering', faculty: 'Engineering', emoji: '🏥' },
+
   // Faculty of Environmental Sciences
   { name: 'Architecture', faculty: 'Environmental Sciences', emoji: '🏛️' },
-  { name: 'Urban & Regional Planning', faculty: 'Environmental Sciences', emoji: '🗺️' },
-  { name: 'Estate Management', faculty: 'Environmental Sciences', emoji: '🏠' },
-  { name: 'Surveying & Geoinformatics', faculty: 'Environmental Sciences', emoji: '📍' },
   { name: 'Building Technology', faculty: 'Environmental Sciences', emoji: '🧱' },
-  // Faculty of Management Sciences
-  { name: 'Business Administration', faculty: 'Management Sciences', emoji: '💼' },
-  { name: 'Accounting', faculty: 'Management Sciences', emoji: '💰' },
-  { name: 'Banking & Finance', faculty: 'Management Sciences', emoji: '🏦' },
-  { name: 'Marketing', faculty: 'Management Sciences', emoji: '📢' },
-  { name: 'Public Administration', faculty: 'Management Sciences', emoji: '🏛️' },
-  // Faculty of Social Sciences
-  { name: 'Economics', faculty: 'Social Sciences', emoji: '📈' },
-  { name: 'Mass Communication', faculty: 'Social Sciences', emoji: '📺' },
-  { name: 'Political Science', faculty: 'Social Sciences', emoji: '🗳️' },
-  { name: 'Sociology', faculty: 'Social Sciences', emoji: '👥' },
-  // Faculty of Law
-  { name: 'Law', faculty: 'Law', emoji: '⚖️' },
-  // Faculty of Pharmaceutical Sciences
-  { name: 'Pharmacy', faculty: 'Pharmaceutical Sciences', emoji: '💊' },
+  { name: 'Quantity Surveying', faculty: 'Environmental Sciences', emoji: '📏' },
+  { name: 'Surveying and Geoinformatics', faculty: 'Environmental Sciences', emoji: '📍' },
+  { name: 'Environmental Management', faculty: 'Environmental Sciences', emoji: '🌍' },
+  { name: 'Estate Management', faculty: 'Environmental Sciences', emoji: '🏠' },
+  { name: 'Geography/Meteorology', faculty: 'Environmental Sciences', emoji: '🌦️' },
+  { name: 'Urban & Regional Planning', faculty: 'Environmental Sciences', emoji: '🗺️' },
+
   // Faculty of Education
-  { name: 'Science Education', faculty: 'Education', emoji: '🎓' },
-  { name: 'Arts Education', faculty: 'Education', emoji: '📚' },
-  // College of Medicine
-  { name: 'Medicine and Surgery', faculty: 'College of Medicine', emoji: '🩺' },
-  { name: 'Nursing', faculty: 'College of Medicine', emoji: '👩‍⚕️' },
-  { name: 'Medical Laboratory Science', faculty: 'College of Medicine', emoji: '🔬' },
-  // Information Technology
-  { name: 'Information Technology', faculty: 'Physical Sciences', emoji: '🖥️' },
+  { name: 'Biology Education', faculty: 'Education', emoji: '🧬' },
+  { name: 'Physics Education', faculty: 'Education', emoji: '⚛️' },
+  { name: 'Chemistry Education', faculty: 'Education', emoji: '🧪' },
+  { name: 'Integrated Science Education', faculty: 'Education', emoji: '🔬' },
+  { name: 'Agricultural Science Education', faculty: 'Education', emoji: '🌾' },
+  { name: 'Technology & Vocational Education', faculty: 'Education', emoji: '🔩' },
+  { name: 'Building/Woodwork Education', faculty: 'Education', emoji: '🪵' },
+  { name: 'Electrical/Electronics Technology Education', faculty: 'Education', emoji: '⚡' },
+  { name: 'Mechanical Technology Education', faculty: 'Education', emoji: '⚙️' },
+  { name: 'Mathematics Education', faculty: 'Education', emoji: '📐' },
+  { name: 'Computer Science Education', faculty: 'Education', emoji: '💻' },
+  { name: 'Library and Information Science', faculty: 'Education', emoji: '📚' },
+  { name: 'Human Kinetics and Health Education', faculty: 'Education', emoji: '🏃' },
+  { name: 'Continuing Education and Development Studies', faculty: 'Education', emoji: '📖' },
+  { name: 'Educational Foundation', faculty: 'Education', emoji: '🎓' },
+  { name: 'Education Management', faculty: 'Education', emoji: '🏫' },
+  { name: 'Guidance and Counselling', faculty: 'Education', emoji: '🤝' },
+  { name: 'Educational Administration and Supervision', faculty: 'Education', emoji: '📋' },
+  { name: 'Business and Entrepreneurship Education', faculty: 'Education', emoji: '💼' },
+
+  // Faculty of Management Sciences
+  { name: 'Banking and Finance', faculty: 'Management Sciences', emoji: '🏦' },
+  { name: 'Marketing', faculty: 'Management Sciences', emoji: '📢' },
+  { name: 'Cooperative Economics and Management', faculty: 'Management Sciences', emoji: '🤝' },
+  { name: 'Insurance and Risk Management', faculty: 'Management Sciences', emoji: '🛡️' },
+
+  // Faculty of Social Sciences & Humanities
+  { name: 'History and International Studies', faculty: 'Social Sciences & Humanities', emoji: '📜' },
+  { name: 'Sociology and Anthropology', faculty: 'Social Sciences & Humanities', emoji: '👥' },
+  { name: 'Psychology', faculty: 'Social Sciences & Humanities', emoji: '🧠' },
+  { name: 'English and Literary Studies', faculty: 'Social Sciences & Humanities', emoji: '✍️' },
+  { name: 'Economics', faculty: 'Social Sciences & Humanities', emoji: '📈' },
+
+  // Other Departments
+  { name: 'Human Nutrition and Dietetics', faculty: 'Other', emoji: '🥗' },
 ];
 
 export const DEPARTMENT_NAMES = DEPARTMENTS.map(d => d.name);
@@ -123,11 +144,11 @@ export const QUALIFICATIONS = [
 ] as const;
 
 // ─── MATRIC VALIDATION ──────────────────────────────────────────
-
-export const MATRIC_REGEX = /^\d{4}\/\d{6}\/[A-Z]{2,6}$/;
+// No regex restriction — ESUT has changed matric formats multiple times.
+// Just validate it's not empty and is unique (checked in Firestore).
 
 export function validateMatricNumber(matric: string): boolean {
-  return MATRIC_REGEX.test(matric);
+  return matric.trim().length >= 3;
 }
 
 export function calculateLevel(yearOfEntry: string): string {

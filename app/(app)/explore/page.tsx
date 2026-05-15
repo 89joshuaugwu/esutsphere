@@ -55,35 +55,35 @@ export default function ExplorePage() {
   };
 
   return (
-    <div className="max-w-[900px] mx-auto pb-10">
+    <div className="max-w-[900px] mx-auto pb-20 md:pb-10">
       {/* Header */}
-      <div className="pt-7 pb-6 flex flex-col gap-[18px]">
-        <h1 className="font-display text-[32px] text-text-primary">Explore ESUTSphere</h1>
-        <div className="relative max-w-[560px]">
+      <div className="pt-5 md:pt-7 pb-5 md:pb-6 flex flex-col gap-3.5 md:gap-[18px]">
+        <h1 className="font-display text-[24px] md:text-[32px] text-text-primary">Explore ESUTSphere</h1>
+        <div className="relative">
           <Search className="w-4 h-4 text-text-disabled absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Search documents, users, tags..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full h-[46px] bg-white/[0.05] border border-white/[0.08] rounded-[10px] pl-10 pr-4 text-text-primary text-sm outline-hidden focus:border-brand/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] transition-all placeholder:text-text-disabled"
+            className="w-full max-w-[560px] h-[42px] md:h-[46px] bg-white/[0.05] border border-white/[0.08] rounded-[10px] pl-10 pr-4 text-text-primary text-sm outline-hidden focus:border-brand/50 focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] transition-all placeholder:text-text-disabled"
           />
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1.5 flex-wrap pb-5 border-b border-white/[0.07]">
+      {/* Tabs — scrollable on mobile */}
+      <div className="flex gap-1.5 pb-4 md:pb-5 border-b border-white/[0.07] overflow-x-auto no-scrollbar">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-[7px] px-[18px] py-2 rounded-full text-[13px] font-semibold border transition-all duration-[180ms] ${
+            className={`flex items-center gap-[6px] md:gap-[7px] px-3 md:px-[18px] py-[7px] md:py-2 rounded-full text-[12px] md:text-[13px] font-semibold border transition-all duration-[180ms] whitespace-nowrap shrink-0 ${
               activeTab === tab.id
                 ? "bg-brand/[0.14] border-brand/40 text-brand-light"
                 : "bg-transparent border-white/[0.08] text-text-muted hover:bg-white/[0.05] hover:text-text-secondary"
             }`}
           >
-            <tab.icon className="w-[15px] h-[15px]" />
+            <tab.icon className="w-[14px] h-[14px] md:w-[15px] md:h-[15px]" />
             {tab.label}
           </button>
         ))}

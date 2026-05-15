@@ -69,33 +69,33 @@ export default function FeedPage() {
   return (
     <div className="flex gap-0 max-w-[1080px] mx-auto">
       {/* ── Feed Column ───────────────────────────────────── */}
-      <div className="flex-1 max-w-[680px] pb-10">
+      <div className="flex-1 max-w-[680px] pb-20 md:pb-10">
         {/* Feed Header */}
-        <div className="flex items-center justify-between pt-6 pb-0">
-          <h1 className="font-display text-[28px] text-text-primary leading-none">
+        <div className="flex items-center justify-between pt-5 md:pt-6 pb-0">
+          <h1 className="font-display text-[24px] md:text-[28px] text-text-primary leading-none">
             Campus Feed
           </h1>
           <Link
             href="/blog/write"
-            className="flex items-center gap-[7px] bg-brand/[0.12] border border-brand/30 text-brand-light text-[13px] font-semibold px-4 py-2 rounded-full hover:bg-brand/20 transition-all"
+            className="flex items-center gap-[6px] bg-brand/[0.12] border border-brand/30 text-brand-light text-[12px] md:text-[13px] font-semibold px-3 md:px-4 py-[7px] md:py-2 rounded-full hover:bg-brand/20 transition-all"
           >
             <PenSquare className="w-3.5 h-3.5" /> Write Post
           </Link>
         </div>
 
-        {/* Tab Bar */}
-        <div className="flex gap-0 mt-4 border-b border-white/[0.07]">
+        {/* Tab Bar — scrollable on mobile */}
+        <div className="flex gap-0 mt-3 md:mt-4 border-b border-white/[0.07] overflow-x-auto no-scrollbar">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-[7px] px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-all ${
+              className={`flex items-center gap-[6px] md:gap-[7px] px-3.5 md:px-5 py-2.5 md:py-3 text-[13px] md:text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap shrink-0 ${
                 activeTab === tab.id
                   ? "text-brand-light border-brand"
                   : "text-text-disabled border-transparent hover:text-text-muted"
               }`}
             >
-              <tab.icon className="w-4 h-4" />
+              <tab.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
               {tab.label}
               {tab.id === "department" && user?.department && (
                 <span className="text-[10px] font-bold px-[7px] py-0.5 rounded-full bg-cyan/[0.12] text-cyan border border-cyan/20">

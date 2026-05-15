@@ -55,29 +55,31 @@ export default function NotificationsPage() {
   const earlierNotifs = filtered.filter(n => n.time.includes("d ago"));
 
   return (
-    <div className="max-w-[680px] mx-auto pb-10">
+    <div className="max-w-[680px] mx-auto pb-20 md:pb-10">
       {/* Header */}
-      <div className="flex items-center justify-between pt-6 mb-5">
-        <h1 className="font-display text-[28px] text-text-primary">Notifications</h1>
+      <div className="flex items-center justify-between pt-5 md:pt-6 mb-4 md:mb-5 gap-3">
+        <h1 className="font-display text-[24px] md:text-[28px] text-text-primary shrink-0">Notifications</h1>
         <div className="flex gap-2.5">
           {unreadCount > 0 && (
             <button
               onClick={markAllRead}
-              className="h-[34px] px-3.5 rounded-lg bg-brand/10 border border-brand/25 text-brand-light text-[13px] font-semibold hover:bg-brand/20 transition-all flex items-center gap-1.5"
+              className="h-[32px] md:h-[34px] px-2.5 md:px-3.5 rounded-lg bg-brand/10 border border-brand/25 text-brand-light text-[12px] md:text-[13px] font-semibold hover:bg-brand/20 transition-all flex items-center gap-1.5 shrink-0 whitespace-nowrap"
             >
-              <CheckCheck className="w-3.5 h-3.5" /> Mark all read
+              <CheckCheck className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Mark all read</span>
+              <span className="sm:hidden">Read all</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-1 mb-5 bg-white/[0.03] border border-white/[0.07] rounded-[10px] p-1 w-fit">
+      {/* Filter Tabs — scrollable on mobile */}
+      <div className="flex gap-1 mb-4 md:mb-5 bg-white/[0.03] border border-white/[0.07] rounded-[10px] p-1 overflow-x-auto no-scrollbar">
         {filters.map(f => (
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
-            className={`px-4 py-[7px] rounded-[7px] text-[13px] font-semibold transition-all ${
+            className={`px-3 md:px-4 py-[7px] rounded-[7px] text-[12px] md:text-[13px] font-semibold transition-all whitespace-nowrap shrink-0 ${
               filter === f.id
                 ? "bg-brand/[0.18] text-brand-light"
                 : "text-text-muted hover:text-text-secondary"
@@ -111,7 +113,7 @@ export default function NotificationsPage() {
                   {!n.isRead && (
                     <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-brand" />
                   )}
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center text-lg shrink-0 ${n.iconClass}`}>
+                  <div className={`w-9 h-9 md:w-11 md:h-11 rounded-full flex items-center justify-center text-base md:text-lg shrink-0 ${n.iconClass}`}>
                     {n.icon}
                   </div>
                   <div className="flex-1 min-w-0">

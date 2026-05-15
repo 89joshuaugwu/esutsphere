@@ -6,7 +6,8 @@ import { DEPARTMENTS, getFacultyForDepartment, LEVELS, QUALIFICATIONS, generateA
 import { CheckCircle, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
-const MATRIC_REGEX = /^\d{4}\/\d{6}\/[A-Z]{2,6}$/;
+// No regex restriction — ESUT matric formats have changed multiple times
+const MIN_MATRIC_LENGTH = 3;
 const SESSIONS = generateAcademicSessions();
 
 function calculateLevel(yearOfEntry: string): string {
@@ -35,15 +36,15 @@ export default function Step1Page() {
   const [staffId, setStaffId] = useState(data.staffId);
   const [qualification, setQualification] = useState(data.qualification);
 
-  const matricValid = matric ? MATRIC_REGEX.test(matric.toUpperCase()) : null;
+  const matricValid = matric ? matric.trim().length >= MIN_MATRIC_LENGTH : null;
   const level = year ? calculateLevel(year) : "";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (role === "student") {
-      if (!MATRIC_REGEX.test(matric.toUpperCase())) {
-        toast.error("Invalid Matric Number format (e.g. 2022/249671/CS)");
+      if (!matric.trim() || matric.trim().length < MIN_MATRIC_LENGTH) {
+        toast.error("Please enter your matric number.");
         return;
       }
       if (!dept || !year) {
