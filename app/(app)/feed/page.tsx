@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import FeedPost from "@/components/feed/FeedPost";
+import FeedComposer from "@/components/feed/FeedComposer";
 import { PenSquare, Sparkles, Users, Building2, TrendingUp, UserPlus, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,6 +49,7 @@ export default function FeedPage() {
   const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
   const [posts, setPosts] = useState(MOCK_POSTS);
   const [isLoading, setIsLoading] = useState(false);
+  const [showComposer, setShowComposer] = useState(false);
   const { user } = useAuth();
 
   const loadMore = () => {
@@ -67,146 +69,154 @@ export default function FeedPage() {
   const avatarUrl = user?.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || "anon"}`;
 
   return (
-    <div className="flex gap-0 max-w-[1080px] mx-auto">
-      {/* ── Feed Column ───────────────────────────────────── */}
-      <div className="flex-1 max-w-[680px] pb-20 md:pb-10">
-        {/* Feed Header */}
-        <div className="flex items-center justify-between pt-5 md:pt-6 pb-0">
-          <h1 className="font-display text-[24px] md:text-[28px] text-text-primary leading-none">
-            Campus Feed
-          </h1>
-          <Link
-            href="/blog/write"
-            className="flex items-center gap-[6px] bg-brand/[0.12] border border-brand/30 text-brand-light text-[12px] md:text-[13px] font-semibold px-3 md:px-4 py-[7px] md:py-2 rounded-full hover:bg-brand/20 transition-all"
-          >
-            <PenSquare className="w-3.5 h-3.5" /> Write Post
-          </Link>
-        </div>
-
-        {/* Tab Bar — scrollable on mobile */}
-        <div className="flex gap-0 mt-3 md:mt-4 border-b border-white/[0.07] overflow-x-auto no-scrollbar">
-          {tabs.map(tab => (
+    <>
+      <div className="flex gap-0 max-w-[1080px] mx-auto overflow-x-hidden">
+        {/* ── Feed Column ───────────────────────────────────── */}
+        <div className="flex-1 min-w-0 max-w-[680px] pb-20 md:pb-10">
+          {/* Feed Header */}
+          <div className="flex items-center justify-between pt-5 md:pt-6 pb-0 gap-3">
+            <h1 className="font-display text-[22px] md:text-[28px] text-text-primary leading-none shrink-0">
+              Campus Feed
+            </h1>
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-[6px] md:gap-[7px] px-3.5 md:px-5 py-2.5 md:py-3 text-[13px] md:text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap shrink-0 ${
-                activeTab === tab.id
-                  ? "text-brand-light border-brand"
-                  : "text-text-disabled border-transparent hover:text-text-muted"
-              }`}
+              onClick={() => setShowComposer(true)}
+              className="flex items-center gap-[6px] bg-brand/[0.12] border border-brand/30 text-brand-light text-[12px] md:text-[13px] font-semibold px-3 md:px-4 py-[7px] md:py-2 rounded-full hover:bg-brand/20 transition-all shrink-0"
             >
-              <tab.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              {tab.label}
-              {tab.id === "department" && user?.department && (
-                <span className="text-[10px] font-bold px-[7px] py-0.5 rounded-full bg-cyan/[0.12] text-cyan border border-cyan/20">
-                  {user.department.slice(0, 3).toUpperCase()}
-                </span>
-              )}
+              <PenSquare className="w-3.5 h-3.5" /> Write Post
             </button>
-          ))}
-        </div>
-
-        {/* Quick Composer */}
-        <Link
-          href="/blog/write"
-          className="flex gap-3 items-center bg-[rgba(22,22,42,0.6)] border border-white/[0.08] rounded-[14px] p-[14px_16px] my-4 hover:border-brand/30 transition-[border-color] cursor-pointer"
-        >
-          <img src={avatarUrl} alt="" className="w-9 h-9 rounded-full border border-white/10 object-cover shrink-0" />
-          <div className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-full px-[18px] py-[9px] text-sm text-text-disabled pointer-events-none">
-            What&apos;s on your mind?
           </div>
-        </Link>
 
-        {/* Posts */}
-        <div className="space-y-0">
-          {posts.map((post, i) => (
-            <FeedPost key={post.id} post={post} />
-          ))}
-        </div>
-
-        {/* Load More */}
-        <div className="text-center pt-4">
-          <button
-            onClick={loadMore}
-            disabled={isLoading}
-            className="px-6 py-2.5 bg-white/[0.05] border border-white/[0.10] rounded-full text-text-secondary hover:text-white hover:bg-white/10 transition-all text-sm font-medium disabled:opacity-50"
-          >
-            {isLoading ? "Loading..." : "Load More"}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Right Sidebar ─────────────────────────────────── */}
-      <div className="hidden lg:flex flex-col gap-4 w-[300px] shrink-0 sticky top-[calc(var(--nav-height)+16px)] max-h-[calc(100vh-80px)] overflow-y-auto pl-7 pt-6">
-        {/* Trending Tags Widget */}
-        <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] p-[18px]">
-          <div className="flex items-center justify-between text-[13px] font-bold text-text-primary mb-3.5">
-            <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Trending</span>
-            <Link href="/explore" className="text-brand text-xs font-medium hover:text-brand-light transition-colors">See all</Link>
-          </div>
-          {[
-            { rank: 1, tag: "#CSC201", count: "2.4k posts" },
-            { rank: 2, tag: "#PastQuestions", count: "1.8k posts" },
-            { rank: 3, tag: "#ExamPrep", count: "1.2k posts" },
-            { rank: 4, tag: "#ProjectTopics", count: "890 posts" },
-            { rank: 5, tag: "#ESUT2025", count: "720 posts" },
-          ].map(t => (
-            <div key={t.rank} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-b-0 last:pb-0 cursor-pointer hover:pl-1 transition-all">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-text-disabled w-4">{t.rank}</span>
-                <span className="text-[13px] font-semibold text-text-secondary">{t.tag}</span>
-              </div>
-              <span className="text-[11px] text-text-disabled">{t.count}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Suggested Users Widget */}
-        <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] p-[18px]">
-          <div className="flex items-center justify-between text-[13px] font-bold text-text-primary mb-3.5">
-            <span className="flex items-center gap-2"><UserPlus className="w-4 h-4" /> Suggested</span>
-          </div>
-          {[
-            { name: "Dr. Okafor", username: "dr_okafor", dept: "Computer Science", isLecturer: true },
-            { name: "Chioma Eze", username: "chioma_eze", dept: "Electrical Eng." },
-            { name: "Tunde Lagos", username: "tunde_l", dept: "Civil Engineering" },
-          ].map(u => (
-            <div key={u.username} className="flex items-center gap-2.5 py-2 border-b border-white/[0.04] last:border-b-0 last:pb-0">
-              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt={u.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
-              <div className="flex-1 min-w-0">
-                <Link href={`/profile/${u.username}`} className="text-[13px] font-semibold text-text-primary hover:text-brand-light transition-colors truncate block">
-                  {u.name}
-                </Link>
-                <span className="text-[11px] text-text-disabled truncate block">{u.dept}</span>
-              </div>
-              <button className="h-7 px-3 rounded-full bg-brand/[0.12] border border-brand/30 text-brand-light text-xs font-semibold hover:bg-brand/[0.22] transition-all shrink-0">
-                Follow
+          {/* Tab Bar — scrollable on mobile */}
+          <div className="flex gap-0 mt-3 md:mt-4 border-b border-white/[0.07] overflow-x-auto no-scrollbar">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-[6px] md:gap-[7px] px-3 md:px-5 py-2.5 md:py-3 text-[12px] md:text-sm font-semibold border-b-2 -mb-px transition-all whitespace-nowrap shrink-0 ${
+                  activeTab === tab.id
+                    ? "text-brand-light border-brand"
+                    : "text-text-disabled border-transparent hover:text-text-muted"
+                }`}
+              >
+                <tab.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                {tab.label}
+                {tab.id === "department" && user?.department && (
+                  <span className="text-[10px] font-bold px-[7px] py-0.5 rounded-full bg-cyan/[0.12] text-cyan border border-cyan/20">
+                    {user.department.slice(0, 3).toUpperCase()}
+                  </span>
+                )}
               </button>
+            ))}
+          </div>
+
+          {/* Quick Composer — opens Feed modal, NOT blog */}
+          <button
+            onClick={() => setShowComposer(true)}
+            className="flex gap-3 items-center w-full bg-[rgba(22,22,42,0.6)] border border-white/[0.08] rounded-[14px] p-[12px_14px] md:p-[14px_16px] my-4 hover:border-brand/30 transition-[border-color] cursor-pointer text-left"
+          >
+            <img src={avatarUrl} alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border border-white/10 object-cover shrink-0" />
+            <div className="flex-1 min-w-0 bg-white/[0.04] border border-white/[0.08] rounded-full px-[14px] md:px-[18px] py-[8px] md:py-[9px] text-[13px] md:text-sm text-text-disabled">
+              What&apos;s on your mind?
             </div>
-          ))}
+          </button>
+
+          {/* Posts */}
+          <div className="space-y-0">
+            {posts.map((post) => (
+              <FeedPost key={post.id} post={post} />
+            ))}
+          </div>
+
+          {/* Load More */}
+          <div className="text-center pt-4 pb-2">
+            <button
+              onClick={loadMore}
+              disabled={isLoading}
+              className="px-6 py-2.5 bg-white/[0.05] border border-white/[0.10] rounded-full text-text-secondary hover:text-white hover:bg-white/10 transition-all text-sm font-medium disabled:opacity-50"
+            >
+              {isLoading ? "Loading..." : "Load More"}
+            </button>
+          </div>
         </div>
 
-        {/* Top Documents Widget */}
-        <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] p-[18px]">
-          <div className="flex items-center justify-between text-[13px] font-bold text-text-primary mb-3.5">
-            <span className="flex items-center gap-2"><BookOpen className="w-4 h-4" /> Top Documents</span>
-            <Link href="/library" className="text-brand text-xs font-medium hover:text-brand-light transition-colors">Browse</Link>
-          </div>
-          {[
-            { title: "CSC 201 Past Questions 2024", downloads: "1.2k", type: "past_questions" },
-            { title: "MTH 101 Lecture Notes", downloads: "890", type: "notes" },
-            { title: "PHY 201 Lab Manual", downloads: "650", type: "handout" },
-          ].map((d, i) => (
-            <div key={i} className="flex items-center gap-2.5 py-2 border-b border-white/[0.04] last:border-b-0 last:pb-0 cursor-pointer hover:bg-white/[0.02] rounded transition-all">
-              <span className="text-lg">📄</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-text-primary truncate">{d.title}</p>
-                <p className="text-[11px] text-text-disabled">{d.downloads} downloads</p>
-              </div>
+        {/* ── Right Sidebar ─────────────────────────────────── */}
+        <div className="hidden lg:flex flex-col gap-4 w-[300px] shrink-0 sticky top-[calc(var(--nav-height)+16px)] max-h-[calc(100vh-80px)] overflow-y-auto pl-7 pt-6">
+          {/* Trending Tags Widget */}
+          <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] p-[18px]">
+            <div className="flex items-center justify-between text-[13px] font-bold text-text-primary mb-3.5">
+              <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Trending</span>
+              <Link href="/explore" className="text-brand text-xs font-medium hover:text-brand-light transition-colors">See all</Link>
             </div>
-          ))}
+            {[
+              { rank: 1, tag: "#CSC201", count: "2.4k posts" },
+              { rank: 2, tag: "#PastQuestions", count: "1.8k posts" },
+              { rank: 3, tag: "#ExamPrep", count: "1.2k posts" },
+              { rank: 4, tag: "#ProjectTopics", count: "890 posts" },
+              { rank: 5, tag: "#ESUT2025", count: "720 posts" },
+            ].map(t => (
+              <div key={t.rank} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-b-0 last:pb-0 cursor-pointer hover:pl-1 transition-all">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-text-disabled w-4">{t.rank}</span>
+                  <span className="text-[13px] font-semibold text-text-secondary">{t.tag}</span>
+                </div>
+                <span className="text-[11px] text-text-disabled">{t.count}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Suggested Users Widget */}
+          <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] p-[18px]">
+            <div className="flex items-center justify-between text-[13px] font-bold text-text-primary mb-3.5">
+              <span className="flex items-center gap-2"><UserPlus className="w-4 h-4" /> Suggested</span>
+            </div>
+            {[
+              { name: "Dr. Okafor", username: "dr_okafor", dept: "Computer Science", isLecturer: true },
+              { name: "Chioma Eze", username: "chioma_eze", dept: "Electrical Eng." },
+              { name: "Tunde Lagos", username: "tunde_l", dept: "Civil Engineering" },
+            ].map(u => (
+              <div key={u.username} className="flex items-center gap-2.5 py-2 border-b border-white/[0.04] last:border-b-0 last:pb-0">
+                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt={u.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <Link href={`/profile/${u.username}`} className="text-[13px] font-semibold text-text-primary hover:text-brand-light transition-colors truncate block">
+                    {u.name}
+                  </Link>
+                  <span className="text-[11px] text-text-disabled truncate block">{u.dept}</span>
+                </div>
+                <button className="h-7 px-3 rounded-full bg-brand/[0.12] border border-brand/30 text-brand-light text-xs font-semibold hover:bg-brand/[0.22] transition-all shrink-0">
+                  Follow
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Top Documents Widget */}
+          <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] p-[18px]">
+            <div className="flex items-center justify-between text-[13px] font-bold text-text-primary mb-3.5">
+              <span className="flex items-center gap-2"><BookOpen className="w-4 h-4" /> Top Documents</span>
+              <Link href="/library" className="text-brand text-xs font-medium hover:text-brand-light transition-colors">Browse</Link>
+            </div>
+            {[
+              { title: "CSC 201 Past Questions 2024", downloads: "1.2k", type: "past_questions" },
+              { title: "MTH 101 Lecture Notes", downloads: "890", type: "notes" },
+              { title: "PHY 201 Lab Manual", downloads: "650", type: "handout" },
+            ].map((d, i) => (
+              <div key={i} className="flex items-center gap-2.5 py-2 border-b border-white/[0.04] last:border-b-0 last:pb-0 cursor-pointer hover:bg-white/[0.02] rounded transition-all">
+                <span className="text-lg">📄</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-text-primary truncate">{d.title}</p>
+                  <p className="text-[11px] text-text-disabled">{d.downloads} downloads</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Feed Composer Modal */}
+      <FeedComposer
+        isOpen={showComposer}
+        onClose={() => setShowComposer(false)}
+      />
+    </>
   );
 }
