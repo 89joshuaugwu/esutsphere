@@ -1,14 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, Plus, Bell, User } from "lucide-react";
+import { Home, BookOpen, Plus, Bell, Compass } from "lucide-react";
 
 const TABS = [
   { label: "Home", href: "/feed", icon: Home },
   { label: "Blog", href: "/blog", icon: BookOpen },
   { label: "Upload", href: "/library", icon: Plus, isFab: true },
   { label: "Alerts", href: "/notifications", icon: Bell },
-  { label: "Profile", href: "/profile/me", icon: User },
+  { label: "Explore", href: "/explore", icon: Compass },
 ];
 
 export default function BottomTabBar() {

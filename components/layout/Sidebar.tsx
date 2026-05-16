@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home, Hash, Library, Bell, User, PenSquare, Upload,
+  Home, Compass, Library, Bell, User, PenSquare, Upload,
   LayoutDashboard, Settings, Sparkles, BookOpen,
   ClipboardList, CheckCircle, Users, Shield,
 } from "lucide-react";
@@ -14,7 +14,7 @@ const NAV_GROUPS = [
     items: [
       { label: "Feed", href: "/feed", icon: Home },
       { label: "Blog", href: "/blog", icon: BookOpen },
-      { label: "Explore", href: "/explore", icon: Hash },
+      { label: "Explore", href: "/explore", icon: Compass },
       { label: "Notifications", href: "/notifications", icon: Bell },
       { label: "Library", href: "/library", icon: Library },
     ],

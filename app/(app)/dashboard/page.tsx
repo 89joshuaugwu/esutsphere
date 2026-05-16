@@ -299,20 +299,55 @@ export default function DashboardPage() {
                     {/* Cover Photo */}
                     <div className="pb-5 border-b border-white/[0.06]">
                       <label className="text-[13px] font-medium text-text-secondary block mb-2.5">Cover Photo</label>
-                      <div className="w-full h-[120px] md:h-[180px] rounded-xl border-2 border-dashed border-white/[0.1] bg-white/[0.02] relative overflow-hidden group cursor-pointer hover:border-brand/30 transition-all">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        id="cover-photo-input"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              const preview = document.getElementById("cover-preview") as HTMLImageElement;
+                              const empty = document.getElementById("cover-empty");
+                              const overlay = document.getElementById("cover-overlay");
+                              if (preview) {
+                                preview.src = reader.result as string;
+                                preview.classList.remove("hidden");
+                              }
+                              if (empty) empty.classList.add("hidden");
+                              if (overlay) overlay.classList.remove("hidden");
+                              // TODO: Upload to Firebase Storage
+                              import("react-hot-toast").then(({ default: toast }) => toast.success("Cover photo selected! Save to apply."));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <div
+                        className="w-full h-[120px] md:h-[180px] rounded-xl border-2 border-dashed border-white/[0.1] bg-white/[0.02] relative overflow-hidden group cursor-pointer hover:border-brand/30 transition-all"
+                        onClick={() => document.getElementById("cover-photo-input")?.click()}
+                      >
                         {user?.coverPhoto ? (
                           <>
-                            <img src={user.coverPhoto} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button className="h-8 px-3.5 rounded-lg bg-white/15 text-text-primary text-[12px] font-semibold hover:bg-white/25 transition-all">Change</button>
-                              <button className="h-8 px-3.5 rounded-lg bg-error/15 border border-error/30 text-error text-[12px] font-semibold hover:bg-error/25 transition-all">Remove</button>
+                            <img id="cover-preview" src={user.coverPhoto} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
+                            <div id="cover-overlay" className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={(e) => { e.stopPropagation(); document.getElementById("cover-photo-input")?.click(); }} className="h-8 px-3.5 rounded-lg bg-white/15 text-text-primary text-[12px] font-semibold hover:bg-white/25 transition-all">Change</button>
+                              <button onClick={(e) => { e.stopPropagation(); }} className="h-8 px-3.5 rounded-lg bg-error/15 border border-error/30 text-error text-[12px] font-semibold hover:bg-error/25 transition-all">Remove</button>
                             </div>
                           </>
                         ) : (
-                          <div className="flex flex-col items-center justify-center h-full gap-1.5">
-                            <Camera className="w-5 h-5 text-text-disabled" />
-                            <span className="text-[12px] text-text-disabled">Click to upload cover photo</span>
-                          </div>
+                          <>
+                            <img id="cover-preview" src="" alt="" className="absolute inset-0 w-full h-full object-cover hidden" />
+                            <div id="cover-overlay" className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3 hidden opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={(e) => { e.stopPropagation(); document.getElementById("cover-photo-input")?.click(); }} className="h-8 px-3.5 rounded-lg bg-white/15 text-text-primary text-[12px] font-semibold hover:bg-white/25 transition-all">Change</button>
+                            </div>
+                            <div id="cover-empty" className="flex flex-col items-center justify-center h-full gap-1.5">
+                              <Camera className="w-5 h-5 text-text-disabled" />
+                              <span className="text-[12px] text-text-disabled">Click to upload cover photo</span>
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>
