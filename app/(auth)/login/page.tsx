@@ -1,13 +1,17 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithPopup, signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import {
+  signInWithPopup, signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+} from "firebase/auth";
 import { auth, googleProvider, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, KeyRound } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, KeyRound, Loader2 } from "lucide-react";
 import OtpModal from "@/components/auth/OtpModal";
+import Logo from "@/components/ui/Logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,13 +20,22 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [rejectionData, setRejectionData] = useState<{ reason: string } | null>(null);
+  
+  // 2FA state
   const [show2faModal, setShow2faModal] = useState(false);
-  const [pendingUid, setPendingUid] = useState<string | null>(null);
   const [pending2faEmail, setPending2faEmail] = useState("");
+  const [pendingCredentials, setPendingCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [pendingGoogleUid, setPendingGoogleUid] = useState<string | null>(null);
+  
+  // Forgot password state
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
-  const [forgotStep, setForgotStep] = useState<"email" | "otp" | "done">("email");
+  const [forgotStep, setForgotStep] = useState<"email" | "otp" | "newpw" | "done">("email");
   const [forgotSending, setForgotSending] = useState(false);
+  const [forgotNewPw, setForgotNewPw] = useState("");
+  const [forgotConfirmPw, setForgotConfirmPw] = useState("");
+  const [showForgotPw, setShowForgotPw] = useState(false);
+  const [resettingPw, setResettingPw] = useState(false);
   const router = useRouter();
 
   // Shared post-auth routing logic
@@ -39,7 +52,12 @@ export default function LoginPage() {
       } else if (userData.approvalStatus === "pending") {
         router.push("/onboarding/pending");
       } else if (userData.approvalStatus === "rejected") {
-        setRejectionData({ reason: userData.rejectionReason || "No reason provided." });
+        // Check if it's a suspension
+        if (userData.suspendedBy) {
+          router.push("/onboarding/pending");
+        } else {
+          setRejectionData({ reason: userData.rejectionReason || "No reason provided." });
+        }
       }
     }
   };
@@ -53,8 +71,12 @@ export default function LoginPage() {
       if (userDoc.exists()) {
         const userData = userDoc.data();
         if (userData.twoFactorEnabled && userData.twoFactorMethods?.includes("google")) {
-          setPendingUid(result.user.uid);
-          setPending2faEmail(result.user.email || "");
+          const googleEmail = result.user.email || "";
+          const uid = result.user.uid;
+          await firebaseSignOut(auth);
+          setPending2faEmail(googleEmail);
+          setPendingGoogleUid(uid);
+          setPendingCredentials(null);
           setShow2faModal(true);
           return;
         }
@@ -80,8 +102,10 @@ export default function LoginPage() {
       if (userDoc.exists()) {
         const userData = userDoc.data();
         if (userData.twoFactorEnabled && userData.twoFactorMethods?.includes("email")) {
-          setPendingUid(result.user.uid);
+          await firebaseSignOut(auth);
           setPending2faEmail(email);
+          setPendingCredentials({ email, password });
+          setPendingGoogleUid(null);
           setShow2faModal(true);
           return;
         }
@@ -99,24 +123,66 @@ export default function LoginPage() {
     }
   };
 
+  // After 2FA OTP verified — re-sign-in and navigate
   const handle2faVerified = async () => {
     setShow2faModal(false);
     toast.success("Identity verified!");
-    if (pendingUid) await handlePostAuth(pendingUid);
+    try {
+      if (pendingCredentials) {
+        const result = await signInWithEmailAndPassword(auth, pendingCredentials.email, pendingCredentials.password);
+        await handlePostAuth(result.user.uid);
+      } else if (pendingGoogleUid) {
+        const result = await signInWithPopup(auth, googleProvider);
+        await handlePostAuth(result.user.uid);
+      }
+    } catch {
+      toast.error("Sign-in failed after verification. Please try again.");
+    }
   };
 
-  const handleForgotPassword = async () => {
+  // ── FORGOT PASSWORD — Custom OTP Flow ──
+  const handleForgotSendOtp = async () => {
     if (!forgotEmail) return;
     setForgotSending(true);
     try {
-      // Use Firebase's built-in reset but also send OTP for extra verification
-      await sendPasswordResetEmail(auth, forgotEmail);
-      toast.success("Password reset link sent to your email!");
-      setForgotStep("done");
+      const res = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail, purpose: "password_reset" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+      toast.success("Reset code sent to your email!");
+      setForgotStep("otp");
     } catch (error: any) {
-      toast.error(error.message || "Failed to send reset email");
+      toast.error(error.message || "Failed to send reset code");
     } finally {
       setForgotSending(false);
+    }
+  };
+
+  const handleForgotOtpVerified = () => {
+    setForgotStep("newpw");
+  };
+
+  const handleResetPassword = async () => {
+    if (forgotNewPw.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    if (forgotNewPw !== forgotConfirmPw) { toast.error("Passwords do not match"); return; }
+    setResettingPw(true);
+    try {
+      const res = await fetch("/api/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail, newPassword: forgotNewPw }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to reset password");
+      toast.success("Password reset successfully! Please sign in.");
+      setForgotStep("done");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to reset password");
+    } finally {
+      setResettingPw(false);
     }
   };
 
@@ -151,22 +217,54 @@ export default function LoginPage() {
             <div className="px-6 py-6">
               {forgotStep === "email" && (
                 <div className="space-y-4">
-                  <p className="text-[13px] text-text-secondary text-center">Enter your email and we&apos;ll send a password reset link.</p>
+                  <p className="text-[13px] text-text-secondary text-center">Enter your email and we&apos;ll send a verification code.</p>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-text-disabled absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="you@esut.edu.ng" className="w-full h-12 bg-white/[0.04] border border-white/10 rounded-[10px] text-text-primary text-sm pl-10 pr-4 outline-hidden focus:border-brand transition-all placeholder:text-text-disabled" />
                   </div>
-                  <button onClick={handleForgotPassword} disabled={!forgotEmail || forgotSending} className="w-full h-11 bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-[14px] font-bold rounded-xl flex items-center justify-center gap-2 disabled:opacity-40 transition-all">
-                    {forgotSending ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : "Send Reset Link"}
+                  <button onClick={handleForgotSendOtp} disabled={!forgotEmail || forgotSending} className="w-full h-11 bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-[14px] font-bold rounded-xl flex items-center justify-center gap-2 disabled:opacity-40 transition-all">
+                    {forgotSending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send Reset Code"}
+                  </button>
+                </div>
+              )}
+              {forgotStep === "otp" && (
+                <OtpModal
+                  isOpen={true}
+                  onClose={() => { setForgotStep("email"); }}
+                  onVerified={handleForgotOtpVerified}
+                  email={forgotEmail}
+                  purpose="password_reset"
+                  title="Verify Reset Code"
+                  description="Enter the 6-digit code sent to"
+                />
+              )}
+              {forgotStep === "newpw" && (
+                <div className="space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center mx-auto text-xl mb-2">🔑</div>
+                  <h3 className="text-[15px] font-bold text-text-primary text-center">Set New Password</h3>
+                  <p className="text-[12px] text-text-muted text-center">Create a new password for <strong className="text-brand-light">{forgotEmail}</strong></p>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-text-disabled absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input type={showForgotPw ? "text" : "password"} value={forgotNewPw} onChange={(e) => setForgotNewPw(e.target.value)} placeholder="New password (min 6 chars)" className="w-full h-12 bg-white/[0.04] border border-white/10 rounded-[10px] text-text-primary text-sm pl-10 pr-12 outline-hidden focus:border-brand transition-all placeholder:text-text-disabled" />
+                    <button type="button" onClick={() => setShowForgotPw(!showForgotPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-disabled hover:text-text-muted transition-colors">
+                      {showForgotPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-text-disabled absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input type={showForgotPw ? "text" : "password"} value={forgotConfirmPw} onChange={(e) => setForgotConfirmPw(e.target.value)} placeholder="Confirm new password" className={`w-full h-12 bg-white/[0.04] border rounded-[10px] text-text-primary text-sm pl-10 pr-4 outline-hidden focus:border-brand transition-all placeholder:text-text-disabled ${forgotConfirmPw && forgotConfirmPw !== forgotNewPw ? "border-error" : "border-white/10"}`} />
+                  </div>
+                  <button onClick={handleResetPassword} disabled={resettingPw || !forgotNewPw || forgotNewPw.length < 6 || forgotNewPw !== forgotConfirmPw} className="w-full h-11 bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-[14px] font-bold rounded-xl flex items-center justify-center gap-2 disabled:opacity-40 transition-all">
+                    {resettingPw ? <Loader2 className="w-4 h-4 animate-spin" /> : "Reset Password"}
                   </button>
                 </div>
               )}
               {forgotStep === "done" && (
                 <div className="text-center space-y-3">
                   <div className="w-14 h-14 rounded-full bg-success/10 border border-success/20 flex items-center justify-center mx-auto text-2xl">✅</div>
-                  <h3 className="text-[16px] font-bold text-text-primary">Check your email!</h3>
-                  <p className="text-[13px] text-text-secondary">A password reset link has been sent to <strong className="text-brand-light">{forgotEmail}</strong></p>
-                  <button onClick={() => { setShowForgotModal(false); setForgotStep("email"); }} className="text-[13px] font-semibold text-brand-light hover:underline">Back to Login</button>
+                  <h3 className="text-[16px] font-bold text-text-primary">Password Reset!</h3>
+                  <p className="text-[13px] text-text-secondary">Your password has been reset successfully. You can now sign in with your new password.</p>
+                  <button onClick={() => { setShowForgotModal(false); setForgotStep("email"); setForgotNewPw(""); setForgotConfirmPw(""); }} className="h-10 px-5 rounded-lg bg-brand/[0.14] border border-brand/30 text-brand-light text-[13px] font-semibold hover:bg-brand/[0.24] transition-all">Back to Login</button>
                 </div>
               )}
             </div>
@@ -185,9 +283,8 @@ export default function LoginPage() {
         <div className="absolute -bottom-[100px] -right-[100px] w-[350px] h-[350px] rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.15)_0%,transparent_65%)] blur-[40px] pointer-events-none" />
 
         {/* Top: Logo */}
-        <div className="flex items-center gap-3 relative z-10">
-          <img src="/logo.png" alt="ESUTSphere" className="w-10 h-10 rounded-full" />
-          <span className="text-xl font-bold text-text-primary">ESUTSphere</span>
+        <div className="relative z-10">
+          <Logo variant="full" size="md" />
         </div>
 
         {/* Center: Tagline */}

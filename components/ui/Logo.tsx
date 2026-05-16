@@ -16,7 +16,7 @@ const sizes = {
   hero: { icon: 64, text: 28, gap: 18 },
 };
 
-export function Logo({
+export default function Logo({
   size = "md",
   variant = "full",
   href,

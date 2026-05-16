@@ -39,6 +39,33 @@ export async function POST(req: Request) {
     }
 
     const db = getAdminDb();
+    const now = new Date();
+
+    // ── Clean up stale OTPs first ──
+    const staleSnap = await db
+      .collection("otp_codes")
+      .where("email", "==", email.toLowerCase())
+      .where("deleteAt", "<", now)
+      .get();
+
+    if (!staleSnap.empty) {
+      const batch = db.batch();
+      staleSnap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+
+    // Clean up used OTPs
+    const usedSnap = await db
+      .collection("otp_codes")
+      .where("email", "==", email.toLowerCase())
+      .where("used", "==", true)
+      .get();
+
+    if (!usedSnap.empty) {
+      const batch = db.batch();
+      usedSnap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
 
     // ── Rate limiting: max 3 active OTPs per email per purpose ──
     const existingSnap = await db
@@ -46,7 +73,7 @@ export async function POST(req: Request) {
       .where("email", "==", email.toLowerCase())
       .where("purpose", "==", purpose)
       .where("used", "==", false)
-      .where("expiresAt", ">", FieldValue.serverTimestamp())
+      .where("expiresAt", ">", now)
       .get();
 
     if (existingSnap.size >= 3) {
@@ -61,8 +88,6 @@ export async function POST(req: Request) {
     const codeHash = crypto.createHash("sha256").update(code).digest("hex");
 
     // ── Store hashed OTP in Firestore ──
-    // OTP lifecycle: 10 min active → expires → 5 min grace → auto-delete (15 min total)
-    const now = new Date();
     const expiresAt = new Date(now.getTime() + 10 * 60 * 1000); // 10 min
     const deleteAt = new Date(now.getTime() + 15 * 60 * 1000);  // 15 min
 
@@ -77,32 +102,6 @@ export async function POST(req: Request) {
       expiresAt,
       deleteAt,
     });
-
-    // ── Clean up old expired/used OTPs for this email ──
-    const staleSnap = await db
-      .collection("otp_codes")
-      .where("email", "==", email.toLowerCase())
-      .where("deleteAt", "<", now)
-      .get();
-
-    if (!staleSnap.empty) {
-      const batch = db.batch();
-      staleSnap.docs.forEach((d) => batch.delete(d.ref));
-      await batch.commit();
-    }
-
-    // Also clean up used OTPs
-    const usedSnap = await db
-      .collection("otp_codes")
-      .where("email", "==", email.toLowerCase())
-      .where("used", "==", true)
-      .get();
-
-    if (!usedSnap.empty) {
-      const batch = db.batch();
-      usedSnap.docs.forEach((d) => batch.delete(d.ref));
-      await batch.commit();
-    }
 
     // ── Send email ──
     const { subject, html } = otpEmailTemplate({ code, purpose, displayName, expiresInMin: 10 });

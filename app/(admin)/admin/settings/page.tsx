@@ -36,14 +36,22 @@ export default function AdminSettingsPage() {
     if (!admin) return;
     setTestingEmail(true);
     try {
-      await fetch("/api/send-email", {
+      const res = await fetch("/api/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ template: "test", recipientEmail: admin.email }),
+        body: JSON.stringify({
+          to: admin.email,
+          subject: "ESUTSphere — Test Email",
+          html: `<div style="font-family:system-ui;background:#0F0F1A;color:#F8FAFC;padding:40px;border-radius:16px;text-align:center;"><h2 style="color:#A855F7;margin:0 0 12px">✅ SMTP Connection Successful</h2><p style="color:#94A3B8;font-size:14px;margin:0">Your email configuration is working correctly.<br/>Sent at ${new Date().toLocaleString()}</p></div>`,
+        }),
       });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to send");
+      }
       toast.success("Test email sent to " + admin.email);
-    } catch {
-      toast.error("Failed to send test email");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send test email");
     } finally {
       setTestingEmail(false);
     }

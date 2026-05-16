@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Bell, LogOut, Settings, User, LayoutDashboard, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import Logo from "@/components/ui/Logo";
 
 export default function TopNav() {
   const { user, firebaseUser, signOut } = useAuth();
@@ -42,15 +43,9 @@ export default function TopNav() {
       }}
     >
       {/* Logo */}
-      <Link href="/feed" className="flex items-center gap-2.5 shrink-0">
-        <img
-          src="/logo.png"
-          alt="ESUTSphere"
-          className="w-[30px] h-[30px] rounded-full object-cover"
-        />
-        <span className="text-[17px] font-extrabold text-text-primary tracking-[-0.3px] hidden sm:block">
-          ESUTSphere
-        </span>
+      <Link href="/feed" className="flex items-center shrink-0">
+        <span className="hidden sm:block"><Logo variant="compact" size="sm" /></span>
+        <span className="sm:hidden"><Logo variant="icon-only" size="sm" /></span>
       </Link>
 
       {/* Center Search */}

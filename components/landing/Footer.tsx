@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Globe, Hash, Link2, Mail } from "lucide-react";
+import Logo from "@/components/ui/Logo";
 
 const FOOTER_LINKS = {
   Platform: [
@@ -39,10 +40,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <Image src="/logo.png" alt="ESUTSphere" width={32} height={32} className="rounded-lg" />
-              <span className="text-text-primary font-semibold text-[17px]">
-                ESUT<span className="text-brand-light">Sphere</span>
-              </span>
+              <Logo variant="compact" size="sm" />
             </Link>
             <p className="text-sm text-text-disabled leading-relaxed max-w-[280px] mb-6">
               The premier academic social platform for Enugu State University of Science and Technology students.

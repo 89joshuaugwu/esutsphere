@@ -1,9 +1,11 @@
 "use client";
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { MapPin, Calendar, MessageCircle, Camera, Upload, PenLine, Heart, Download, Eye, FileText, LogIn, UserPlus } from "lucide-react";
+import { MapPin, Calendar, MessageCircle, Camera, Upload, PenLine, Heart, Download, Eye, FileText, LogIn, UserPlus, Loader2, UserX } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { getUserByUsername } from "@/lib/firestore";
+import type { User } from "@/types";
 
 const BADGE_DATA: Record<string, { emoji: string; name: string; desc: string; color: string; rgb: string }> = {
   top_contributor: { emoji: "🏆", name: "Top Contributor", desc: "Uploaded 50+ documents", color: "#F59E0B", rgb: "245,158,11" },
@@ -19,36 +21,49 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   const [activeTab, setActiveTab] = useState<"uploads" | "posts" | "badges">("uploads");
   const { user } = useAuth();
   const isLoggedIn = !!user;
+  const [profile, setProfile] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      setLoading(true);
+      setNotFound(false);
+      try {
+        const fetched = await getUserByUsername(username);
+        if (!fetched) {
+          setNotFound(true);
+        } else {
+          setProfile(fetched);
+        }
+      } catch {
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (username) fetchProfile();
+  }, [username]);
 
   // ── Auth gate: unauthenticated users cannot view profiles ──
   if (!isLoggedIn) {
     return (
       <div className="-mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 min-h-[80vh] flex items-center justify-center relative overflow-hidden">
-        {/* Background gradient */}
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(124,58,237,0.15)_0%,rgba(6,182,212,0.08)_100%)]" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-brand/[0.06] blur-[100px]" />
-
         <div className="relative z-10 text-center px-6 max-w-md mx-auto" style={{ animation: "card-enter 0.5s both" }}>
           <div className="w-20 h-20 rounded-full bg-brand/10 border border-brand/20 flex items-center justify-center mx-auto mb-6">
             <UserPlus className="w-9 h-9 text-brand-light" />
           </div>
-          <h2 className="font-display text-[26px] md:text-[32px] text-text-primary mb-3">
-            Join ESUTSphere
-          </h2>
+          <h2 className="font-display text-[26px] md:text-[32px] text-text-primary mb-3">Join ESUTSphere</h2>
           <p className="text-sm md:text-[15px] text-text-muted leading-relaxed mb-8">
-            Sign in or create an account to view <strong className="text-text-secondary">@{username}</strong>&apos;s profile, follow them, and connect with the community.
+            Sign in or create an account to view <strong className="text-text-secondary">@{username}</strong>&apos;s profile.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/login"
-              className="h-11 px-6 rounded-[10px] bg-brand text-white text-sm font-bold flex items-center justify-center gap-2 shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:-translate-y-[2px] hover:shadow-[0_10px_32px_rgba(124,58,237,0.5)] transition-all"
-            >
+            <Link href="/login" className="h-11 px-6 rounded-[10px] bg-brand text-white text-sm font-bold flex items-center justify-center gap-2 shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:-translate-y-[2px] transition-all">
               <LogIn className="w-4 h-4" /> Sign In
             </Link>
-            <Link
-              href="/signup"
-              className="h-11 px-6 rounded-[10px] bg-white/[0.06] border border-white/[0.1] text-text-primary text-sm font-bold flex items-center justify-center gap-2 hover:bg-white/[0.1] transition-all"
-            >
+            <Link href="/signup" className="h-11 px-6 rounded-[10px] bg-white/[0.06] border border-white/[0.1] text-text-primary text-sm font-bold flex items-center justify-center gap-2 hover:bg-white/[0.1] transition-all">
               <UserPlus className="w-4 h-4" /> Create Account
             </Link>
           </div>
@@ -57,40 +72,58 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     );
   }
 
-  // Mock Profile
-  const profile = {
-    displayName: "Joshua Ugwu",
-    username,
-    bio: "Computer Science student passionate about AI, compilers, and web development. Building ESUTSphere. 🚀",
-    department: "Computer Science",
-    faculty: "Physical Sciences",
-    level: "400L",
-    joined: "Oct 2023",
-    isVerified: true,
-    isOnline: true,
-    followers: 245,
-    following: 120,
-    uploads: 15,
-    downloads: 2340,
-    points: 1850,
-    badges: ["top_contributor", "note_legend", "research_king", "consistent"] as string[],
-  };
+  // ── Loading state ──
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-7 h-7 text-brand-light animate-spin" />
+      </div>
+    );
+  }
+
+  // ── Profile not found ──
+  if (notFound || !profile) {
+    return (
+      <div className="-mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 min-h-[70vh] flex items-center justify-center">
+        <div className="text-center px-6" style={{ animation: "card-enter 0.4s both" }}>
+          <div className="w-20 h-20 rounded-2xl bg-error/10 border border-error/20 flex items-center justify-center mx-auto mb-5">
+            <UserX className="w-9 h-9 text-error" />
+          </div>
+          <h2 className="text-[22px] font-bold text-text-primary mb-2">Profile Not Found</h2>
+          <p className="text-[14px] text-text-muted mb-6 max-w-[300px] mx-auto">
+            The user <strong className="text-text-secondary">@{username}</strong> doesn&apos;t exist or has been removed.
+          </p>
+          <Link href="/explore" className="h-10 px-5 rounded-lg bg-brand/[0.14] border border-brand/30 text-brand-light text-[13px] font-semibold hover:bg-brand/[0.24] transition-all inline-flex items-center gap-2">
+            Explore Users
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const isOwner = user?.username === username;
+  const avatarUrl = profile.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+  const joinDate = profile.createdAt
+    ? new Date((profile.createdAt as any)?.seconds ? (profile.createdAt as any).seconds * 1000 : (profile.createdAt as any)).toLocaleDateString("en-NG", { month: "short", year: "numeric" })
+    : "Unknown";
 
   const tabs = [
-    { key: "uploads" as const, label: "Uploads", count: profile.uploads },
-    { key: "posts" as const, label: "Blog Posts", count: 8 },
-    { key: "badges" as const, label: "Badges", count: profile.badges.length },
+    { key: "uploads" as const, label: "Uploads", count: profile.uploadsCount || 0 },
+    { key: "posts" as const, label: "Blog Posts", count: 0 },
+    { key: "badges" as const, label: "Badges", count: profile.badges?.length || 0 },
   ];
 
   return (
     <div className="-mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8">
       {/* ── Cover Photo ──────────────────────────────────── */}
       <div className="relative w-full h-[180px] md:h-[220px] overflow-hidden">
-        <div className="w-full h-full bg-[linear-gradient(135deg,rgba(124,58,237,0.6)_0%,rgba(91,33,182,0.4)_40%,rgba(6,182,212,0.3)_100%)]" />
+        {profile.coverPhoto ? (
+          <img src={profile.coverPhoto} alt="Cover" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-[linear-gradient(135deg,rgba(124,58,237,0.6)_0%,rgba(91,33,182,0.4)_40%,rgba(6,182,212,0.3)_100%)]" />
+        )}
         {isOwner && (
-          <button className="absolute bottom-3 right-3 bg-black/60 border border-white/15 text-text-primary text-xs font-medium px-3.5 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-colors" style={{ backdropFilter: "blur(8px)" }}>
+          <button className="absolute bottom-3 right-3 bg-black/60 border border-white/15 text-text-primary text-xs font-medium px-3.5 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-colors z-10" style={{ backdropFilter: "blur(8px)" }}>
             <Camera className="w-3.5 h-3.5" /> Edit Cover
           </button>
         )}
@@ -104,21 +137,19 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.4 }}
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`}
+            src={avatarUrl}
             alt={profile.displayName}
             className={`w-[104px] h-[104px] rounded-full object-cover border-4 border-bg-base shadow-[0_4px_20px_rgba(0,0,0,0.5)] ${profile.isVerified ? "outline-3 outline-brand outline-offset-[3px]" : ""}`}
           />
-          {profile.isOnline && (
-            <span className="absolute bottom-1.5 right-1.5 w-4 h-4 rounded-full bg-success border-[3px] border-bg-base" />
-          )}
+          {/* Online indicator - no edit buttons on avatar */}
         </div>
 
         {/* Action buttons — absolute right */}
         <div className="absolute top-4 right-6 md:right-10 flex gap-2.5">
           {isOwner ? (
-            <button className="h-[38px] px-[18px] rounded-full bg-transparent text-text-muted border border-white/[0.14] text-sm font-medium hover:bg-white/[0.06] hover:text-text-primary transition-all">
+            <Link href="/dashboard?tab=settings" className="h-[38px] px-[18px] rounded-full bg-transparent text-text-muted border border-white/[0.14] text-sm font-medium hover:bg-white/[0.06] hover:text-text-primary transition-all inline-flex items-center">
               Edit Profile
-            </button>
+            </Link>
           ) : (
             <>
               <button className="h-[38px] px-5 rounded-full bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold border-none shadow-[0_4px_16px_rgba(124,58,237,0.4)] hover:scale-[1.04] hover:shadow-[0_8px_24px_rgba(124,58,237,0.55)] transition-all">
@@ -139,17 +170,19 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         <p className="text-sm font-medium text-text-muted mb-2.5">@{profile.username}</p>
 
         {/* Bio */}
-        <p className="text-[15px] text-text-secondary leading-6 max-w-[540px] mb-3">
-          {profile.bio}
-        </p>
+        {profile.bio && (
+          <p className="text-[15px] text-text-secondary leading-6 max-w-[540px] mb-3">
+            {profile.bio}
+          </p>
+        )}
 
         {/* Meta */}
         <div className="flex items-center gap-4 flex-wrap">
           <span className="flex items-center gap-1.5 text-[13px] text-text-muted">
-            <MapPin className="w-3.5 h-3.5" /> {profile.department} · {profile.level}
+            <MapPin className="w-3.5 h-3.5" /> {profile.department} · {profile.currentLevel}
           </span>
           <span className="flex items-center gap-1.5 text-[13px] text-text-muted">
-            <Calendar className="w-3.5 h-3.5" /> Joined {profile.joined}
+            <Calendar className="w-3.5 h-3.5" /> Joined {joinDate}
           </span>
         </div>
       </div>
@@ -157,11 +190,11 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       {/* ── Stats Row ──────────────────────────────────── */}
       <div className="flex items-center border-t border-b border-white/[0.06] bg-[rgba(15,15,26,0.4)]">
         {[
-          { label: "Followers", value: profile.followers },
-          { label: "Following", value: profile.following },
-          { label: "Uploads", value: profile.uploads },
-          { label: "Downloads", value: profile.downloads.toLocaleString() },
-          { label: "Points", value: profile.points.toLocaleString(), isPoints: true },
+          { label: "Followers", value: profile.followersCount || 0 },
+          { label: "Following", value: profile.followingCount || 0 },
+          { label: "Uploads", value: profile.uploadsCount || 0 },
+          { label: "Downloads", value: (profile.totalDownloads || 0).toLocaleString() },
+          { label: "Points", value: (profile.points || 0).toLocaleString(), isPoints: true },
         ].map((s, i, arr) => (
           <div
             key={s.label}
@@ -176,30 +209,31 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       </div>
 
       {/* ── Badges Row ──────────────────────────────────── */}
-      <div className="px-6 md:px-10 py-4 border-b border-white/[0.06] flex items-center gap-2.5 flex-wrap">
-        {profile.badges.map(b => {
-          const badge = BADGE_DATA[b];
-          if (!badge) return null;
-          return (
-            <span
-              key={b}
-              className="group relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold cursor-default"
-              style={{
-                backgroundColor: `rgba(${badge.rgb}, 0.12)`,
-                color: badge.color,
-                border: `1px solid rgba(${badge.rgb}, 0.25)`,
-              }}
-            >
-              <span>{badge.emoji}</span>
-              {badge.name}
-              {/* Tooltip */}
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 -translate-y-1 mb-1 bg-bg-surface-3 border border-white/[0.12] rounded-lg px-2.5 py-1.5 text-[11px] font-normal text-text-secondary whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
-                {badge.desc}
+      {profile.badges && profile.badges.length > 0 && (
+        <div className="px-6 md:px-10 py-4 border-b border-white/[0.06] flex items-center gap-2.5 flex-wrap">
+          {profile.badges.map(b => {
+            const badge = BADGE_DATA[b];
+            if (!badge) return null;
+            return (
+              <span
+                key={b}
+                className="group relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold cursor-default"
+                style={{
+                  backgroundColor: `rgba(${badge.rgb}, 0.12)`,
+                  color: badge.color,
+                  border: `1px solid rgba(${badge.rgb}, 0.25)`,
+                }}
+              >
+                <span>{badge.emoji}</span>
+                {badge.name}
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 -translate-y-1 mb-1 bg-bg-surface-3 border border-white/[0.12] rounded-lg px-2.5 py-1.5 text-[11px] font-normal text-text-secondary whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+                  {badge.desc}
+                </span>
               </span>
-            </span>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* ── Profile Tabs ──────────────────────────────────── */}
       <div className="px-6 md:px-10 flex border-b border-white/[0.06]">
@@ -251,7 +285,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
 
         {activeTab === "badges" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {profile.badges.map((b, i) => {
+            {(profile.badges || []).map((b, i) => {
               const badge = BADGE_DATA[b];
               if (!badge) return null;
               return (
@@ -271,11 +305,15 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     {badge.emoji}
                   </div>
                   <p className="text-sm font-bold text-text-primary mb-1.5">{badge.name}</p>
-                  <p className="text-xs text-text-muted leading-[18px] mb-2.5">{badge.desc}</p>
-                  <p className="text-[11px] text-text-disabled">Earned Oct 2024</p>
+                  <p className="text-xs text-text-muted leading-[18px]">{badge.desc}</p>
                 </div>
               );
             })}
+            {(!profile.badges || profile.badges.length === 0) && (
+              <div className="col-span-full text-center py-12">
+                <p className="text-text-muted">No badges earned yet.</p>
+              </div>
+            )}
           </div>
         )}
       </div>

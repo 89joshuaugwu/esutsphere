@@ -376,16 +376,19 @@ export default function DashboardPage() {
                         )}
                       </div>
                     </div>
-                    {/* Fields */}
-                    {[
-                      { label: "Display Name", value: user?.displayName || "", type: "text" },
-                      { label: "Username", value: `@${user?.username || ""}`, type: "text", prefix: true },
-                    ].map((f, i) => (
-                      <div key={i} className="flex flex-col gap-1.5">
-                        <label className="text-[13px] font-medium text-text-secondary">{f.label}</label>
-                        <input type="text" defaultValue={f.value} className="h-11 bg-white/[0.04] border border-white/10 rounded-[10px] px-3.5 text-text-primary text-sm outline-hidden focus:border-brand focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] transition-all" />
+                    {/* Editable Fields */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-text-secondary">Display Name</label>
+                      <input type="text" defaultValue={user?.displayName || ""} className="h-11 bg-white/[0.04] border border-white/10 rounded-[10px] px-3.5 text-text-primary text-sm outline-hidden focus:border-brand focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] transition-all" />
+                    </div>
+                    {/* Read-only: Username */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[13px] font-medium text-text-secondary">Username</label>
+                      <div className="h-11 bg-white/[0.02] border border-white/[0.06] rounded-[10px] px-3.5 flex items-center text-sm text-text-disabled">
+                        @{user?.username || ""}
+                        <Lock className="w-3.5 h-3.5 ml-auto" />
                       </div>
-                    ))}
+                    </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[13px] font-medium text-text-secondary">Bio</label>
                       <textarea defaultValue={user?.bio || ""} maxLength={160} rows={3} className="bg-white/[0.04] border border-white/10 rounded-[10px] p-3.5 text-text-primary text-sm outline-hidden focus:border-brand focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] transition-all resize-none" />

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Menu, X, Bell, Home, BookOpen, Hash, PenLine, ArrowRight, LogIn, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "@/hooks/useAuth";
+import Logo from "@/components/ui/Logo";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
@@ -45,13 +46,8 @@ export default function LandingNav() {
           style={{ backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}
         >
           {/* Logo + Gradient Wordmark */}
-          <Link href="/" className="flex items-center gap-2 px-3 shrink-0">
-            <Image src="/logo.png" alt="ESUTSphere" width={28} height={28} className="rounded-lg" />
-            <span className="text-[15px] font-bold tracking-[-0.3px]">
-              <span className="bg-[linear-gradient(135deg,#A855F7_0%,#7C3AED_45%,#06B6D4_100%)] bg-clip-text text-transparent">
-                ESUTSphere
-              </span>
-            </span>
+          <Link href="/" className="flex items-center px-3 shrink-0">
+            <Logo variant="compact" size="sm" />
           </Link>
 
           {/* Desktop Nav Links */}
