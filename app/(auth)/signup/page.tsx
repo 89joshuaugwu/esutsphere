@@ -7,6 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, User } from "lucide-react";
+import OtpModal from "@/components/auth/OtpModal";
 
 export default function SignupPage() {
   const [selectedRole, setSelectedRole] = useState<"student" | "lecturer">("student");
@@ -18,6 +19,8 @@ export default function SignupPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [pendingUid, setPendingUid] = useState<string | null>(null);
   const router = useRouter();
 
   const handlePostAuth = async (uid: string) => {
@@ -64,7 +67,9 @@ export default function SignupPage() {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       sessionStorage.setItem("esutsphere_signup_role", selectedRole);
       sessionStorage.setItem("esutsphere_signup_name", fullName);
-      await handlePostAuth(result.user.uid);
+      // Show OTP verification modal instead of immediately redirecting
+      setPendingUid(result.user.uid);
+      setShowOtpModal(true);
     } catch (error: any) {
       if (error.code === "auth/email-already-in-use") {
         toast.error("An account with this email already exists. Try signing in.");
@@ -76,8 +81,27 @@ export default function SignupPage() {
     }
   };
 
+  const handleOtpVerified = async () => {
+    setShowOtpModal(false);
+    toast.success("Email verified successfully! 🎉");
+    if (pendingUid) {
+      await handlePostAuth(pendingUid);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col sm:flex-row">
+      {/* Email Verification OTP Modal */}
+      <OtpModal
+        isOpen={showOtpModal}
+        onClose={() => setShowOtpModal(false)}
+        onVerified={handleOtpVerified}
+        email={email}
+        purpose="email_verification"
+        displayName={fullName}
+        title="Verify Your Email"
+        description="We sent a 6-digit code to"
+      />
       {/* ── Left Panel ─────────────────────────────────────── */}
       <div
         className="hidden sm:flex sm:w-[45%] flex-col justify-between p-10 lg:p-12 relative overflow-hidden"

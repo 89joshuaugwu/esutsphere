@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup, signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, KeyRound } from "lucide-react";
+import OtpModal from "@/components/auth/OtpModal";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,6 +16,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [rejectionData, setRejectionData] = useState<{ reason: string } | null>(null);
+  const [show2faModal, setShow2faModal] = useState(false);
+  const [pendingUid, setPendingUid] = useState<string | null>(null);
+  const [pending2faEmail, setPending2faEmail] = useState("");
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStep, setForgotStep] = useState<"email" | "otp" | "done">("email");
+  const [forgotSending, setForgotSending] = useState(false);
   const router = useRouter();
 
   // Shared post-auth routing logic
@@ -40,6 +48,17 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
+      // Check 2FA for Google
+      const userDoc = await getDoc(doc(db, "users", result.user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.twoFactorEnabled && userData.twoFactorMethods?.includes("google")) {
+          setPendingUid(result.user.uid);
+          setPending2faEmail(result.user.email || "");
+          setShow2faModal(true);
+          return;
+        }
+      }
       await handlePostAuth(result.user.uid);
     } catch (error: any) {
       if (error.code !== "auth/popup-closed-by-user") {
@@ -56,6 +75,17 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
+      // Check 2FA
+      const userDoc = await getDoc(doc(db, "users", result.user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.twoFactorEnabled && userData.twoFactorMethods?.includes("email")) {
+          setPendingUid(result.user.uid);
+          setPending2faEmail(email);
+          setShow2faModal(true);
+          return;
+        }
+      }
       await handlePostAuth(result.user.uid);
     } catch (error: any) {
       const code = error.code;
@@ -69,8 +99,80 @@ export default function LoginPage() {
     }
   };
 
+  const handle2faVerified = async () => {
+    setShow2faModal(false);
+    toast.success("Identity verified!");
+    if (pendingUid) await handlePostAuth(pendingUid);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) return;
+    setForgotSending(true);
+    try {
+      // Use Firebase's built-in reset but also send OTP for extra verification
+      await sendPasswordResetEmail(auth, forgotEmail);
+      toast.success("Password reset link sent to your email!");
+      setForgotStep("done");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset email");
+    } finally {
+      setForgotSending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col sm:flex-row">
+      {/* 2FA OTP Modal */}
+      <OtpModal
+        isOpen={show2faModal}
+        onClose={() => setShow2faModal(false)}
+        onVerified={handle2faVerified}
+        email={pending2faEmail}
+        purpose="two_factor"
+        title="Two-Factor Verification"
+        description="Enter the code sent to"
+      />
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: "rgba(8,8,16,0.85)", backdropFilter: "blur(8px)" }}>
+          <div className="w-full max-w-[400px] rounded-2xl overflow-hidden" style={{ background: "rgba(15,15,26,0.98)", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(124,58,237,0.12)", border: "1px solid rgba(124,58,237,0.2)" }}>
+                  <KeyRound className="w-[18px] h-[18px] text-brand-light" />
+                </div>
+                <h2 className="text-[16px] font-bold text-text-primary">Reset Password</h2>
+              </div>
+              <button onClick={() => { setShowForgotModal(false); setForgotStep("email"); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-white/[0.06] transition-all">
+                <span className="text-lg">&times;</span>
+              </button>
+            </div>
+            <div className="px-6 py-6">
+              {forgotStep === "email" && (
+                <div className="space-y-4">
+                  <p className="text-[13px] text-text-secondary text-center">Enter your email and we&apos;ll send a password reset link.</p>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-text-disabled absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="you@esut.edu.ng" className="w-full h-12 bg-white/[0.04] border border-white/10 rounded-[10px] text-text-primary text-sm pl-10 pr-4 outline-hidden focus:border-brand transition-all placeholder:text-text-disabled" />
+                  </div>
+                  <button onClick={handleForgotPassword} disabled={!forgotEmail || forgotSending} className="w-full h-11 bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-[14px] font-bold rounded-xl flex items-center justify-center gap-2 disabled:opacity-40 transition-all">
+                    {forgotSending ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : "Send Reset Link"}
+                  </button>
+                </div>
+              )}
+              {forgotStep === "done" && (
+                <div className="text-center space-y-3">
+                  <div className="w-14 h-14 rounded-full bg-success/10 border border-success/20 flex items-center justify-center mx-auto text-2xl">✅</div>
+                  <h3 className="text-[16px] font-bold text-text-primary">Check your email!</h3>
+                  <p className="text-[13px] text-text-secondary">A password reset link has been sent to <strong className="text-brand-light">{forgotEmail}</strong></p>
+                  <button onClick={() => { setShowForgotModal(false); setForgotStep("email"); }} className="text-[13px] font-semibold text-brand-light hover:underline">Back to Login</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {/* ── Left Panel — Brand + Stats (Desktop) ────────────── */}
       <div
         className="hidden sm:flex sm:w-[45%] flex-col justify-between p-10 lg:p-12 relative overflow-hidden"
@@ -222,7 +324,7 @@ export default function LoginPage() {
                 </button>
               </div>
               <div className="text-right mt-1">
-                <button type="button" className="text-[13px] font-medium text-brand hover:text-brand-light transition-colors">
+                <button type="button" onClick={() => { setShowForgotModal(true); setForgotEmail(email); }} className="text-[13px] font-medium text-brand hover:text-brand-light transition-colors">
                   Forgot password?
                 </button>
               </div>

@@ -1,19 +1,8 @@
-
-
-
-Read DESIGN.md, CONTEXT.md, and 
-
-@contextScopeItemMention
- from the 
+Read DESIGN.md, CONTEXT.md, @contextScopeItemMentionand @contextScopeItemMention from the 
 project root before starting. We're continuing ESUTSphere. 
-Currently working on: notification process, from gmail smtp, to push notifications, the inapp.
-also i want to add some more features i would like to use this gmail smtp for more advance features so like in the sign up via email after the email and apword is added create like a verify email modal so that it appeas in the step 1 above it like something like verify email address so we would use the smtp to genate a random 6 digits code then save it to the database so that it wont be hardcode for developers to see then users enters the otp it then gets compare or verify with the one in the database before closing the modal, so same thind also would be for the forgotten of password or changing or password so instead of using the firebase default reset password link we build ours with that so using the gmail smtp, my firebase details in in the @contextScopeItemMention, so we are like a 2FA in the settings that if user enters will request for otp on every log in via email and password and also we can also set an option for user to activate it for their google account too, also users that registered with google can see an option to add more logins like password to their emails and which they would recieve otp to verify the email address so this gmail smtp is anothe core aspect of this project to so ensure seamless integration with our errors for the email or push notification template give me some superb, cachy, interactive, and attractive and also responsive also 
+Currently working on: the water mark and full notification system, notification process, from gmail smtp, to push notifications, the inapp.
+also i want to add some more features i would like to use this gmail smtp for more advance features so like in the sign up via email after the email and apword is added create like a verify email modal so that it appeas in the step 1 above it like something like verify email address so we would use the smtp to genate a random 6 digits code then save it to the database so that it wont be hardcode for developers to see then users enters the otp it then gets compare or verify with the one in the database before closing the modal, so same thind also would be for the forgotten of password or changing or password so instead of using the firebase default reset password link we build ours with that so using the gmail smtp, my firebase details in in the @contextScopeItemMention, so we are like a 2FA in the settings that if user enters will request for otp on every log in via email and password and also we can also set an option for user to activate it for their google account too, also users that registered with google can see an option to add more logins like password to their emails and which they would recieve otp to verify the email address so this gmail smtp is anothe core aspect of this project to so ensure seamless integration with our errors for the email or push notification template give me some superb, cachy, interactive, and attractive and also responsive also. also if done analyze the firestore and realtimedatabase rules (@contextScopeItemMentionand @contextScopeItemMention) if any update is needed
 Don't write code until you've confirmed you've read the files.
-
-also remember the firestore and realtime database rules if any update is needed
-
-
-Continue also this you analyze the light mode from images
 
 
 samsaint001-+
