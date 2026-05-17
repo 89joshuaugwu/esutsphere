@@ -18,11 +18,11 @@ export default function UploadModal({ isOpen, onClose }: { isOpen: boolean; onCl
   const [contentType, setContentType] = useState("notes");
   const [courseCode, setCourseCode] = useState("");
 
+  const { user } = useAuth();
+
   if (!isOpen) return null;
 
   const handleNext = () => setStep(2);
-  
-  const { user } = useAuth();
 
   const handleUpload = async () => {
     if (!file || !user) return;

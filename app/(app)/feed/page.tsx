@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import FeedPost from "@/components/feed/FeedPost";
 import FeedComposer from "@/components/feed/FeedComposer";
 import { PenSquare, Sparkles, Users, Building2, TrendingUp, UserPlus, BookOpen } from "lucide-react";
@@ -51,29 +51,68 @@ export default function FeedPage() {
   const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
   const [posts, setPosts] = useState<FeedPostData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [lastDoc, setLastDoc] = useState<any>(null);
   const [showComposer, setShowComposer] = useState(false);
   const { user } = useAuth();
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  const fetchPosts = async (isLoadMore = false) => {
+    try {
+      const { collection, query, orderBy, limit, getDocs, startAfter, where } = await import("firebase/firestore");
+      let q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(10));
+      
+      if (isLoadMore && lastDoc) {
+        q = query(collection(db, "posts"), orderBy("createdAt", "desc"), startAfter(lastDoc), limit(10));
+      }
+
+      const snap = await getDocs(q);
+      const newPosts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as FeedPostData[];
+      
+      if (snap.docs.length < 10) setHasMore(false);
+      if (snap.docs.length > 0) setLastDoc(snap.docs[snap.docs.length - 1]);
+
+      if (isLoadMore) {
+        setPosts(prev => [...prev, ...newPosts]);
+      } else {
+        setPosts(newPosts);
+      }
+    } catch (err) {
+      console.error("Error fetching posts:", err);
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
-    import("firebase/firestore").then(({ collection, query, orderBy, limit, onSnapshot }) => {
-      const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50));
-      const unsubscribe = onSnapshot(q, (snap) => {
-        const livePosts = snap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as FeedPostData[];
-        setPosts(livePosts);
-        setIsLoading(false);
-      });
-      return () => unsubscribe();
-    });
-  }, []);
+    setPosts([]);
+    setLastDoc(null);
+    setHasMore(true);
+    setIsLoading(true);
+    fetchPosts();
+  }, [activeTab]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
+          setIsLoadingMore(true);
+          fetchPosts(true);
+        }
+      },
+      { threshold: 1.0 }
+    );
+    if (observerTarget.current) observer.observe(observerTarget.current);
+    return () => observer.disconnect();
+  }, [hasMore, isLoading, isLoadingMore, lastDoc]);
 
   const handleCreatePost = async (postData: { title?: string; content: string; category: string; tags: string[]; imageUrl?: string }) => {
     if (!user) return;
     try {
       const { collection, addDoc, Timestamp } = await import("firebase/firestore");
-      await addDoc(collection(db, "posts"), {
+      const newDocRef = await addDoc(collection(db, "posts"), {
         authorId: user.uid,
         authorName: user.displayName,
         authorUsername: user.username,
@@ -91,15 +130,13 @@ export default function FeedPage() {
         createdAt: Timestamp.now(),
         publishedAt: Timestamp.now(),
       });
+      // Optionally re-fetch or insert at the top
+      fetchPosts();
     } catch (err: any) {
       console.error("Error creating post:", err);
       toast.error("Failed to post: " + err.message);
       throw err;
     }
-  };
-
-  const loadMore = () => {
-    // Implement pagination with Firestore later
   };
 
   const tabs: { id: FeedTab; label: string; icon: React.ElementType }[] = [
@@ -170,14 +207,9 @@ export default function FeedPage() {
           </div>
 
           {/* Load More */}
-          <div className="text-center pt-4 pb-2">
-            <button
-              onClick={loadMore}
-              disabled={isLoading}
-              className="px-6 py-2.5 bg-white/[0.05] border border-white/[0.10] rounded-full text-text-secondary hover:text-white hover:bg-white/10 transition-all text-sm font-medium disabled:opacity-50"
-            >
-              {isLoading ? "Loading..." : "Load More"}
-            </button>
+          <div ref={observerTarget} className="text-center pt-4 pb-2 h-20 flex items-center justify-center">
+            {isLoadingMore && <div className="text-text-muted text-sm font-medium">Loading more posts...</div>}
+            {!hasMore && posts.length > 0 && <div className="text-text-disabled text-sm">No more posts to load</div>}
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { PenLine, Heart, MessageCircle, Eye, Clock, LogIn } from "lucide-react";
 import { POST_CATEGORIES } from "@/constants/departments";
@@ -16,20 +16,69 @@ export default function BlogListingPage() {
   
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [lastDoc, setLastDoc] = useState<any>(null);
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  const fetchPosts = async (isLoadMore = false) => {
+    try {
+      const { collection, query, orderBy, limit, getDocs, startAfter, where } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+      
+      let q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(10));
+      
+      // If a specific category is selected, we could add a where clause here if the index exists
+      // For now we will fetch everything and filter client-side, but ideally we'd query by category
+      
+      if (isLoadMore && lastDoc) {
+        q = query(collection(db, "posts"), orderBy("createdAt", "desc"), startAfter(lastDoc), limit(10));
+      }
+
+      const snap = await getDocs(q);
+      const newPosts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[];
+      
+      if (snap.docs.length < 10) setHasMore(false);
+      if (snap.docs.length > 0) setLastDoc(snap.docs[snap.docs.length - 1]);
+
+      if (isLoadMore) {
+        setPosts(prev => {
+          // ensure no duplicates
+          const existingIds = new Set(prev.map(p => p.id));
+          return [...prev, ...newPosts.filter(p => !existingIds.has(p.id))];
+        });
+      } else {
+        setPosts(newPosts);
+      }
+    } catch (err) {
+      console.error("Error fetching blog posts:", err);
+    } finally {
+      setLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
-    import("firebase/firestore").then(({ collection, query, orderBy, onSnapshot }) => {
-      import("@/lib/firebase").then(({ db }) => {
-        const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-        const unsub = onSnapshot(q, (snap) => {
-          const livePosts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[];
-          setPosts(livePosts);
-          setLoading(false);
-        });
-        return () => unsub();
-      });
-    });
-  }, []);
+    setPosts([]);
+    setLastDoc(null);
+    setHasMore(true);
+    setLoading(true);
+    fetchPosts();
+  }, []); // Re-fetch only on mount, client side filter for categories for now
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loading && !isLoadingMore) {
+          setIsLoadingMore(true);
+          fetchPosts(true);
+        }
+      },
+      { threshold: 1.0 }
+    );
+    if (observerTarget.current) observer.observe(observerTarget.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading, isLoadingMore, lastDoc]);
 
   const featuredPost = posts.find(p => p.isFeatured) || posts[0]; // fallback to latest
   const filteredPosts = useMemo(() => {
@@ -159,7 +208,7 @@ export default function BlogListingPage() {
                 {/* Content */}
                 <div className="p-[18px] flex-1 flex flex-col gap-2.5">
                   <div className="flex items-center gap-2">
-                    <span className={`text-[11px] font-bold uppercase tracking-[0.4px] px-2 py-[3px] rounded-full border ${CATEGORY_COLORS[post.category] || "bg-white/10 text-text-muted border-white/10"}`}>
+                    <span className={`text-[11px] font-bold uppercase tracking-[0.4px] px-2 py-[3px] rounded-full border bg-white/10 text-text-muted border-white/10`}>
                       {POST_CATEGORIES.find(c => c.value === post.category)?.label}
                     </span>
                     <span className="text-xs text-text-disabled flex items-center gap-1">
@@ -191,7 +240,7 @@ export default function BlogListingPage() {
               </Link>
             ))}
           </div>
-        ) : (
+        ) : !loading && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <span className="text-5xl mb-4 opacity-40">📝</span>
             <h3 className="text-lg font-semibold text-text-primary mb-2">No posts yet</h3>
@@ -201,6 +250,10 @@ export default function BlogListingPage() {
             </Link>
           </div>
         )}
+
+        <div ref={observerTarget} className="h-20 mt-6 flex items-center justify-center">
+          {isLoadingMore && <div className="text-text-muted text-sm">Loading more posts...</div>}
+        </div>
       </div>
     </div>
   );

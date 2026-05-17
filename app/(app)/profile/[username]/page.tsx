@@ -122,11 +122,6 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         ) : (
           <div className="w-full h-full bg-[linear-gradient(135deg,rgba(124,58,237,0.6)_0%,rgba(91,33,182,0.4)_40%,rgba(6,182,212,0.3)_100%)]" />
         )}
-        {isOwner && (
-          <button className="absolute bottom-3 right-3 bg-black/60 border border-white/15 text-text-primary text-xs font-medium px-3.5 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-colors z-10" style={{ backdropFilter: "blur(8px)" }}>
-            <Camera className="w-3.5 h-3.5" /> Edit Cover
-          </button>
-        )}
       </div>
 
       {/* ── Profile Header ──────────────────────────────── */}
@@ -154,9 +149,6 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
             <>
               <button className="h-[38px] px-5 rounded-full bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold border-none shadow-[0_4px_16px_rgba(124,58,237,0.4)] hover:scale-[1.04] hover:shadow-[0_8px_24px_rgba(124,58,237,0.55)] transition-all">
                 Follow
-              </button>
-              <button className="w-[38px] h-[38px] rounded-full bg-transparent border border-white/[0.14] text-text-muted flex items-center justify-center hover:bg-cyan/10 hover:text-cyan hover:border-cyan/30 transition-all">
-                <MessageCircle className="w-4 h-4" />
               </button>
             </>
           )}

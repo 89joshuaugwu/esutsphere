@@ -11,7 +11,7 @@ import {
   KeyRound, Link2, Plus, X, Mail,
 } from "lucide-react";
 import OtpModal from "@/components/auth/OtpModal";
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove, collection, query, where, orderBy, onSnapshot, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { EmailAuthProvider, linkWithCredential } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -36,6 +36,159 @@ function useCountUp(target: number, duration = 1200) {
 type DashTab = "overview" | "uploads" | "bookmarks" | "settings";
 type SettingsTab = "profile" | "account" | "notifications";
 
+function timeAgo(date: Date) {
+  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " years ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " months ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " days ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " hours ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " minutes ago";
+  return Math.floor(seconds) + " seconds ago";
+}
+
+function DashboardUploadsTab({ userId }: { userId?: string }) {
+  const [uploads, setUploads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+    const q = query(collection(db, "documents"), where("uploaderId", "==", userId), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      setUploads(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [userId]);
+
+  if (loading) return <div className="py-20 text-center text-text-muted">Loading your uploads...</div>;
+
+  return (
+    <div style={{ animation: "card-enter 0.4s both" }}>
+      <div className="flex items-center justify-between mb-5">
+        <p className="text-sm text-text-muted">You have <span className="text-text-primary font-semibold">{uploads.length}</span> uploads</p>
+      </div>
+      {uploads.length === 0 ? (
+        <div className="p-8 text-center bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-2xl">
+          <Upload className="w-10 h-10 text-text-disabled mx-auto mb-3" />
+          <p className="text-text-muted mb-4">You haven't uploaded any documents yet.</p>
+          <Link href="/library" className="px-4 py-2 bg-brand/10 text-brand-light border border-brand/20 rounded-full text-sm font-semibold hover:bg-brand/20 transition-all">Upload Now</Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {uploads.map((doc) => (
+            <div key={doc.id} className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-2xl p-5 relative group hover:border-white/[0.11] transition-all">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.5px] text-brand-light">{doc.contentType}</span>
+              <Link href={`/library/${doc.id}`}><h3 className="text-[15px] font-bold text-text-primary mt-2 mb-3 leading-snug pr-16">{doc.title}</h3></Link>
+              <div className="flex items-center gap-3 text-xs text-text-muted">
+                <span className="flex items-center gap-1"><Download className="w-3 h-3" /> {(doc.downloadCount || 0).toLocaleString()}</span>
+                <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {doc.likesCount || 0}</span>
+                <span className="ml-auto flex items-center gap-1"><Clock className="w-3 h-3" /> {doc.createdAt ? timeAgo(doc.createdAt.toDate()) : "recently"}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DashboardBookmarksTab({ userId }: { userId?: string }) {
+  const [bookmarks, setBookmarks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+    const q = query(collection(db, "bookmarks"), where("userId", "==", userId), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      setBookmarks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [userId]);
+
+  if (loading) return <div className="py-20 text-center text-text-muted">Loading bookmarks...</div>;
+
+  return (
+    <div style={{ animation: "card-enter 0.4s both" }}>
+      <div className="mb-8">
+        <h3 className="text-[15px] font-bold text-text-primary flex items-center gap-2 mb-4">
+          📄 Bookmarks <span className="text-xs font-semibold text-text-disabled bg-white/[0.06] rounded-full px-2 py-0.5">{bookmarks.length}</span>
+        </h3>
+        {bookmarks.length === 0 ? (
+           <p className="text-text-muted text-sm">No bookmarks yet.</p>
+        ) : bookmarks.map((b) => (
+          <div key={b.id} className="flex items-center gap-3 py-3 px-3 rounded-[10px] border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.03] transition-[background] cursor-pointer">
+            <Bookmark className="w-4 h-4 text-brand-light" />
+            <div>
+              <p className="text-[14px] font-bold text-text-primary leading-snug">{b.targetType === 'document' ? 'Document' : 'Post'} Bookmark</p>
+              <p className="text-[12px] text-text-secondary mt-0.5">ID: {b.targetId}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DashboardOverviewTab({ userId }: { userId?: string }) {
+  const [activities, setActivities] = useState<any[]>([]);
+  
+  useEffect(() => {
+    if (!userId) return;
+    const q = query(collection(db, "notifications"), where("recipientId", "==", userId), orderBy("createdAt", "desc"), limit(5));
+    const unsub = onSnapshot(q, (snap) => {
+      setActivities(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, [userId]);
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-5" style={{ animation: "card-enter 0.4s both" }}>
+      {/* Recent Activity */}
+      <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] overflow-hidden">
+        <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
+          <span className="text-sm font-bold text-text-primary">Recent Activity</span>
+          <Link href="/notifications" className="text-xs text-brand font-medium hover:text-brand-light transition-colors">View all</Link>
+        </div>
+        {activities.length === 0 ? (
+          <div className="p-5 text-center text-text-muted text-sm">No recent activity.</div>
+        ) : activities.map((a) => (
+          <div key={a.id} className="flex gap-3 px-5 py-3 border-b border-white/[0.04] last:border-b-0 items-start">
+            <div className={`w-[34px] h-[34px] rounded-full flex items-center justify-center text-sm shrink-0 bg-brand/15`}>🔔</div>
+            <div>
+              <p className="text-[13px] text-text-secondary leading-5">{a.message || a.title}</p>
+              <span className="text-[11px] text-text-disabled mt-0.5 block">{a.createdAt ? timeAgo(a.createdAt.toDate()) : "just now"}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Badges */}
+      <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] p-[18px]">
+        <span className="text-sm font-bold text-text-primary block mb-3.5">Badges Earned</span>
+        <div className="grid grid-cols-2 gap-2.5">
+          {[
+            { icon: "📝", name: "Note Legend", earned: true },
+            { icon: "🏆", name: "Top Contributor", earned: true },
+            { icon: "🔬", name: "Research King", earned: false },
+            { icon: "⭐", name: "Popular", earned: false },
+          ].map((b, i) => (
+            <div key={i} className={`bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center hover:border-brand/25 hover:-translate-y-[2px] transition-all ${!b.earned ? "opacity-40" : ""}`}>
+              <span className="text-[28px] block mb-2">{b.icon}</span>
+              <span className="text-xs font-semibold text-text-primary">{b.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as DashTab) || "overview";
@@ -50,6 +203,9 @@ export default function DashboardPage() {
   const [newPassword, setNewPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [linkingPassword, setLinkingPassword] = useState(false);
+  const [showMfaModal, setShowMfaModal] = useState(false);
+  const [mfaTarget, setMfaTarget] = useState<"email" | "google" | null>(null);
+  
   // Admin notification emails
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
@@ -91,8 +247,9 @@ export default function DashboardPage() {
   const avatarUrl = user?.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || "anon"}`;
 
   return (
-    <div className="max-w-[900px] mx-auto pb-20 md:pb-10">
-      {/* Header */}
+    <>
+      <div className="max-w-[900px] mx-auto pb-20 md:pb-10">
+        {/* Header */}
       <div className="pt-5 md:pt-7 pb-5 md:pb-6">
         <h1 className="font-display text-[clamp(22px,5vw,34px)] text-text-primary mb-1.5">
           {greeting()}, <span className="text-brand-light">{user?.displayName?.split(" ")[0] || "User"}</span> 👋
@@ -155,133 +312,17 @@ export default function DashboardPage() {
 
       {/* ── OVERVIEW ─────────────────────────────────────── */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-5" style={{ animation: "card-enter 0.4s both" }}>
-          {/* Recent Activity */}
-          <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] overflow-hidden">
-            <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
-              <span className="text-sm font-bold text-text-primary">Recent Activity</span>
-              <Link href="/notifications" className="text-xs text-brand font-medium hover:text-brand-light transition-colors">View all</Link>
-            </div>
-            {[
-              { icon: "📤", bg: "bg-brand/15", text: 'You uploaded "CSC 201 Past Questions"', time: "2h ago" },
-              { icon: "❤️", bg: "bg-red-500/12", text: 'Ada Nwosu reacted to your post', time: "5h ago" },
-              { icon: "💬", bg: "bg-cyan/12", text: 'New comment on "MTH 201 Notes"', time: "8h ago" },
-              { icon: "👤", bg: "bg-brand/15", text: "Dr. Okafor started following you", time: "12h ago" },
-              { icon: "⬇️", bg: "bg-gold/12", text: 'Your document was downloaded 50 times', time: "1d ago" },
-            ].map((a, i) => (
-              <div key={i} className="flex gap-3 px-5 py-3 border-b border-white/[0.04] last:border-b-0 items-start">
-                <div className={`w-[34px] h-[34px] rounded-full flex items-center justify-center text-sm shrink-0 ${a.bg}`}>{a.icon}</div>
-                <div>
-                  <p className="text-[13px] text-text-secondary leading-5">{a.text}</p>
-                  <span className="text-[11px] text-text-disabled mt-0.5 block">{a.time}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Badges */}
-          <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-[14px] p-[18px]">
-            <span className="text-sm font-bold text-text-primary block mb-3.5">Badges Earned</span>
-            <div className="grid grid-cols-2 gap-2.5">
-              {[
-                { icon: "📝", name: "Note Legend", earned: true },
-                { icon: "🏆", name: "Top Contributor", earned: true },
-                { icon: "🔬", name: "Research King", earned: false },
-                { icon: "⭐", name: "Popular", earned: false },
-              ].map((b, i) => (
-                <div key={i} className={`bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center hover:border-brand/25 hover:-translate-y-[2px] transition-all ${!b.earned ? "opacity-40" : ""}`}>
-                  <span className="text-[28px] block mb-2">{b.icon}</span>
-                  <span className="text-xs font-semibold text-text-primary">{b.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <DashboardOverviewTab userId={user?.uid} />
       )}
 
       {/* ── MY UPLOADS ───────────────────────────────────── */}
       {activeTab === "uploads" && (
-        <div style={{ animation: "card-enter 0.4s both" }}>
-          <div className="flex items-center justify-between mb-5">
-            <p className="text-sm text-text-muted">You have <span className="text-text-primary font-semibold">{user?.uploadsCount || 0}</span> uploads</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { title: "CSC 201 Past Questions 2024", type: "Past Questions", downloads: 1240, likes: 342, date: "2 days ago" },
-              { title: "MTH 101 Lecture Notes", type: "Notes", downloads: 890, likes: 210, date: "1 week ago" },
-              { title: "PHY 201 Lab Manual", type: "Handout", downloads: 650, likes: 178, date: "2 weeks ago" },
-            ].map((doc, i) => (
-              <div key={i} className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-2xl p-5 relative group hover:border-white/[0.11] transition-all">
-                {/* Owner actions */}
-                <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                  <button className="w-[30px] h-[30px] rounded-[7px] bg-[rgba(8,8,16,0.8)] border border-white/[0.12] text-text-muted flex items-center justify-center hover:text-text-primary transition-all" style={{ backdropFilter: "blur(4px)" }}>
-                    <Edit className="w-3.5 h-3.5" />
-                  </button>
-                  <button className="w-[30px] h-[30px] rounded-[7px] bg-[rgba(8,8,16,0.8)] border border-white/[0.12] text-text-muted flex items-center justify-center hover:bg-error/15 hover:text-error hover:border-error/30 transition-all" style={{ backdropFilter: "blur(4px)" }}>
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.5px] text-brand-light">{doc.type}</span>
-                <h3 className="text-[15px] font-bold text-text-primary mt-2 mb-3 leading-snug pr-16">{doc.title}</h3>
-                <div className="flex items-center gap-3 text-xs text-text-muted">
-                  <span className="flex items-center gap-1"><Download className="w-3 h-3" /> {doc.downloads.toLocaleString()}</span>
-                  <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {doc.likes}</span>
-                  <span className="ml-auto flex items-center gap-1"><Clock className="w-3 h-3" /> {doc.date}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <DashboardUploadsTab userId={user?.uid} />
       )}
 
       {/* ── BOOKMARKS ────────────────────────────────────── */}
       {activeTab === "bookmarks" && (
-        <div style={{ animation: "card-enter 0.4s both" }}>
-          {/* Bookmarked Documents */}
-          <div className="mb-8">
-            <h3 className="text-[15px] font-bold text-text-primary flex items-center gap-2 mb-4">
-              📄 Bookmarked Documents <span className="text-xs font-semibold text-text-disabled bg-white/[0.06] rounded-full px-2 py-0.5">3</span>
-            </h3>
-            {[
-              { title: "CSC 341 Compiler Design Notes", type: "notes", meta: "Dr. Okafor · 890 downloads" },
-              { title: "MTH 201 Past Questions 2023", type: "past_questions", meta: "Jane Smith · 1.2k downloads" },
-              { title: "ENG 111 Communication Skills", type: "notes", meta: "Ada Nwosu · 580 downloads" },
-            ].map((d, i) => (
-              <div key={i} className="flex items-center gap-3 py-3 px-3 rounded-[10px] border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.03] transition-[background] cursor-pointer">
-                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${d.type === "notes" ? "bg-brand-light" : "bg-gold"}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-text-primary truncate">{d.title}</p>
-                  <p className="text-xs text-text-disabled">{d.meta}</p>
-                </div>
-                <button className="w-7 h-7 rounded-[7px] flex items-center justify-center text-text-disabled hover:bg-error/10 hover:text-error transition-all shrink-0">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Bookmarked Blog Posts */}
-          <div>
-            <h3 className="text-[15px] font-bold text-text-primary flex items-center gap-2 mb-4">
-              ✍️ Bookmarked Posts <span className="text-xs font-semibold text-text-disabled bg-white/[0.06] rounded-full px-2 py-0.5">2</span>
-            </h3>
-            {[
-              { title: "How to survive CSC 201 Project Defense", author: "John Doe", time: "2 days ago" },
-              { title: "Best study spots on campus ranked", author: "Chukwuemeka", time: "1 week ago" },
-            ].map((p, i) => (
-              <div key={i} className="flex items-center gap-3 py-3 px-3 rounded-[10px] border-b border-white/[0.04] last:border-b-0 hover:bg-white/[0.03] transition-[background] cursor-pointer">
-                <span className="text-lg shrink-0">📝</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-text-primary truncate">{p.title}</p>
-                  <p className="text-xs text-text-disabled">by {p.author} · {p.time}</p>
-                </div>
-                <button className="w-7 h-7 rounded-[7px] flex items-center justify-center text-text-disabled hover:bg-error/10 hover:text-error transition-all shrink-0">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+        <DashboardBookmarksTab userId={user?.uid} />
       )}
 
       {/* ── SETTINGS ─────────────────────────────────────── */}
@@ -530,18 +571,19 @@ export default function DashboardPage() {
                           checked={twoFaEmail}
                           onChange={async (e) => {
                             const enabled = e.target.checked;
-                            setTwoFaEmail(enabled);
-                            if (!user) return;
-                            try {
-                              const methods = enabled
-                                ? [...new Set([...(twoFaGoogle ? ["google"] : []), "email"])]
-                                : (twoFaGoogle ? ["google"] : []);
+                            if (enabled) {
+                              setMfaTarget("email");
+                              setShowMfaModal(true);
+                            } else {
+                              setTwoFaEmail(false);
+                              if (!user) return;
+                              const methods = twoFaGoogle ? ["google"] : [];
                               await updateDoc(doc(db, "users", user.uid), {
                                 twoFactorEnabled: methods.length > 0,
                                 twoFactorMethods: methods,
                               });
-                              toast.success(enabled ? "2FA enabled for email login" : "2FA disabled for email login");
-                            } catch { toast.error("Failed to update 2FA"); }
+                              toast.success("2FA disabled for email login");
+                            }
                           }}
                           className="sr-only peer"
                         />
@@ -565,18 +607,19 @@ export default function DashboardPage() {
                           checked={twoFaGoogle}
                           onChange={async (e) => {
                             const enabled = e.target.checked;
-                            setTwoFaGoogle(enabled);
-                            if (!user) return;
-                            try {
-                              const methods = enabled
-                                ? [...new Set([...(twoFaEmail ? ["email"] : []), "google"])]
-                                : (twoFaEmail ? ["email"] : []);
+                            if (enabled) {
+                              setMfaTarget("google");
+                              setShowMfaModal(true);
+                            } else {
+                              setTwoFaGoogle(false);
+                              if (!user) return;
+                              const methods = twoFaEmail ? ["email"] : [];
                               await updateDoc(doc(db, "users", user.uid), {
                                 twoFactorEnabled: methods.length > 0,
                                 twoFactorMethods: methods,
                               });
-                              toast.success(enabled ? "2FA enabled for Google login" : "2FA disabled for Google login");
-                            } catch { toast.error("Failed to update 2FA"); }
+                              toast.success("2FA disabled for Google login");
+                            }
                           }}
                           className="sr-only peer"
                         />
@@ -701,28 +744,49 @@ export default function DashboardPage() {
                 <div className="px-[22px] py-[18px] border-b border-white/[0.06] text-[15px] font-bold text-text-primary">Notification Preferences</div>
                 <div className="p-[22px]">
                   {[
-                    { label: "New followers", desc: "When someone follows your profile", default: true },
-                    { label: "Reactions on uploads", desc: "When someone reacts to your documents", default: true },
-                    { label: "Comments on uploads", desc: "When someone comments on your content", default: true },
-                    { label: "Replies to comments", desc: "When someone replies to your comment", default: true },
-                    { label: "@Mentions", desc: "When someone mentions you in a post", default: true },
-                    { label: "New uploads by followed", desc: "When users you follow upload new documents", default: false },
-                    { label: "Account status updates", desc: "Important account notifications", default: true, locked: true },
-                    { label: "Weekly digest", desc: "Summary of your weekly activity", default: false },
-                    { label: "Email notifications", desc: "Receive notifications via email", default: false },
-                  ].map((n, i) => (
-                    <div key={i} className="flex items-center justify-between py-3.5 border-b border-white/[0.04] last:border-b-0">
-                      <div className="flex-1 mr-4">
-                        <p className="text-sm font-semibold text-text-primary mb-0.5">{n.label}</p>
-                        <p className="text-xs text-text-muted">{n.desc}</p>
+                    { id: "newFollowers", label: "New followers", desc: "When someone follows your profile", default: true },
+                    { id: "reactions", label: "Reactions on uploads", desc: "When someone reacts to your documents", default: true },
+                    { id: "comments", label: "Comments on uploads", desc: "When someone comments on your content", default: true },
+                    { id: "replies", label: "Replies to comments", desc: "When someone replies to your comment", default: true },
+                    { id: "mentions", label: "@Mentions", desc: "When someone mentions you in a post", default: true },
+                    { id: "newUploads", label: "New uploads by followed", desc: "When users you follow upload new documents", default: false },
+                    { id: "accountUpdates", label: "Account status updates", desc: "Important account notifications", default: true, locked: true },
+                    { id: "weeklyDigest", label: "Weekly digest", desc: "Summary of your weekly activity", default: false },
+                    { id: "emailNotifications", label: "Email notifications", desc: "Receive notifications via email", default: false },
+                  ].map((n, i) => {
+                    const prefs = (user as any)?.notificationPreferences || {};
+                    const isChecked = typeof prefs[n.id] === "boolean" ? prefs[n.id] : n.default;
+                    
+                    return (
+                      <div key={i} className="flex items-center justify-between py-3.5 border-b border-white/[0.04] last:border-b-0">
+                        <div className="flex-1 mr-4">
+                          <p className="text-sm font-semibold text-text-primary mb-0.5">{n.label}</p>
+                          <p className="text-xs text-text-muted">{n.desc}</p>
+                        </div>
+                        <label className="relative w-12 h-[26px] shrink-0">
+                          <input 
+                            type="checkbox" 
+                            checked={isChecked}
+                            onChange={async (e) => {
+                              if (n.locked || !user) return;
+                              try {
+                                await updateDoc(doc(db, "users", user.uid), {
+                                  [`notificationPreferences.${n.id}`]: e.target.checked
+                                });
+                                toast.success("Preferences updated");
+                              } catch (err: any) {
+                                toast.error("Failed to update preferences");
+                              }
+                            }}
+                            disabled={n.locked} 
+                            className="sr-only peer" 
+                          />
+                          <span className="absolute inset-0 cursor-pointer rounded-full bg-white/10 peer-checked:bg-brand transition-[background] duration-200" />
+                          <span className="absolute w-5 h-5 rounded-full bg-white left-[3px] top-[3px] shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-transform duration-200 peer-checked:translate-x-[22px]" style={{ transitionTimingFunction: "cubic-bezier(0.34,1.56,0.64,1)" }} />
+                        </label>
                       </div>
-                      <label className="relative w-12 h-[26px] shrink-0">
-                        <input type="checkbox" defaultChecked={n.default} disabled={n.locked} className="sr-only peer" />
-                        <span className="absolute inset-0 cursor-pointer rounded-full bg-white/10 peer-checked:bg-brand transition-[background] duration-200" />
-                        <span className="absolute w-5 h-5 rounded-full bg-white left-[3px] top-[3px] shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-transform duration-200 peer-checked:translate-x-[22px]" style={{ transitionTimingFunction: "cubic-bezier(0.34,1.56,0.64,1)" }} />
-                      </label>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -730,5 +794,31 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+      <OtpModal
+        isOpen={showMfaModal}
+        onClose={() => setShowMfaModal(false)}
+        email={user?.email || ""}
+        purpose="two_factor"
+        title="Enable Two-Factor Authentication"
+        description="Enter the verification code sent to"
+        onVerified={async () => {
+          setShowMfaModal(false);
+          if (!user || !mfaTarget) return;
+          try {
+            const currentMethods = (user as any)?.twoFactorMethods || [];
+            const enabledMethods = [...new Set([...currentMethods, mfaTarget])];
+            await updateDoc(doc(db, "users", user.uid), {
+              twoFactorEnabled: true,
+              twoFactorMethods: enabledMethods,
+            });
+            if (mfaTarget === "email") setTwoFaEmail(true);
+            if (mfaTarget === "google") setTwoFaGoogle(true);
+            toast.success(`2FA setup complete for ${mfaTarget} login`);
+          } catch {
+            toast.error("Failed to save 2FA setup");
+          }
+        }}
+      />
+    </>
   );
 }

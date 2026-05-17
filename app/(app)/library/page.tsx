@@ -8,28 +8,6 @@ import { Document, ContentType } from "@/types";
 import { CONTENT_TYPES, LEVELS, DEPARTMENTS } from "@/constants/departments";
 import { useAuth } from "@/hooks/useAuth";
 
-// ── Mock Data ─────────────────────────────────────────────────────
-const MOCK_DOCS: Document[] = [
-  {
-    id: "1", title: "MTH101 General Mathematics I Notes", description: "Complete notes for first semester general mathematics including calculus, algebra, and trigonometry fundamentals.", fileUrl: "#", fileType: "pdf", fileSizeKb: 2500, contentType: "notes", department: "Computer Science", faculty: "Physical Sciences", courseCode: "MTH 101", courseName: "General Mathematics I", level: "100L", academicSession: "2024/2025", uploaderId: "u1", uploaderName: "John Doe", uploaderUsername: "johndoe", uploaderAvatar: "", isLecturerUpload: false, viewCount: 1205, downloadCount: 450, likesCount: 89, commentsCount: 12, bookmarksCount: 30, isPinned: true, isApproved: true, isFeatured: false, tags: ["math", "calculus"], createdAt: null as any, updatedAt: null as any
-  },
-  {
-    id: "2", title: "CSC201 Introduction to Programming (Java)", description: "Past questions and detailed solutions from 2018-2024 exam sessions.", fileUrl: "#", fileType: "pdf", fileSizeKb: 1200, contentType: "past_questions", department: "Computer Science", faculty: "Physical Sciences", courseCode: "CSC 201", courseName: "Introduction to Programming", level: "200L", academicSession: "2024/2025", uploaderId: "u2", uploaderName: "Jane Smith", uploaderUsername: "janesmith", uploaderAvatar: "", isLecturerUpload: false, viewCount: 890, downloadCount: 320, likesCount: 45, commentsCount: 5, bookmarksCount: 15, isPinned: false, isApproved: true, isFeatured: true, tags: ["java", "programming"], createdAt: null as any, updatedAt: null as any
-  },
-  {
-    id: "3", title: "PHY101 Classical Mechanics Research Paper", description: "Comprehensive research paper on Newtonian mechanics and its applications in modern engineering.", fileUrl: "#", fileType: "pdf", fileSizeKb: 3200, contentType: "research", department: "Industrial Physics", faculty: "Physical Sciences", courseCode: "PHY 101", courseName: "Classical Mechanics", level: "100L", academicSession: "2023/2024", uploaderId: "u3", uploaderName: "Dr. Okafor", uploaderUsername: "dr_okafor", uploaderAvatar: "", isLecturerUpload: true, viewCount: 560, downloadCount: 180, likesCount: 67, commentsCount: 8, bookmarksCount: 22, isPinned: false, isApproved: true, isFeatured: false, tags: ["physics", "mechanics"], createdAt: null as any, updatedAt: null as any
-  },
-  {
-    id: "4", title: "CSC466 Compiler Construction Notes", description: "Complete lecture notes from Dr. T. Asogwa's class. Covers lexical analysis, parsing, and code generation.", fileUrl: "#", fileType: "pdf", fileSizeKb: 4100, contentType: "notes", department: "Computer Science", faculty: "Physical Sciences", courseCode: "CSC 466", courseName: "Compiler Construction", level: "400L", academicSession: "2024/2025", uploaderId: "u4", uploaderName: "Joshua Ugwu", uploaderUsername: "joshuazaza", uploaderAvatar: "", isLecturerUpload: false, viewCount: 1540, downloadCount: 680, likesCount: 124, commentsCount: 19, bookmarksCount: 45, isPinned: true, isApproved: true, isFeatured: true, tags: ["compiler", "cs"], createdAt: null as any, updatedAt: null as any
-  },
-  {
-    id: "5", title: "BUS301 Principles of Marketing Seminar", description: "Seminar presentation slides on digital marketing strategies for Nigerian businesses.", fileUrl: "#", fileType: "pptx", fileSizeKb: 5200, contentType: "seminar", department: "Business Administration", faculty: "Management Sciences", courseCode: "BUS 301", courseName: "Principles of Marketing", level: "300L", academicSession: "2024/2025", uploaderId: "u5", uploaderName: "Temi Adewale", uploaderUsername: "temilade", uploaderAvatar: "", isLecturerUpload: false, viewCount: 320, downloadCount: 95, likesCount: 28, commentsCount: 3, bookmarksCount: 10, isPinned: false, isApproved: true, isFeatured: false, tags: ["marketing", "business"], createdAt: null as any, updatedAt: null as any
-  },
-  {
-    id: "6", title: "CHM201 Organic Chemistry Textbook Summary", description: "Condensed textbook notes covering all major organic chemistry reactions and mechanisms.", fileUrl: "#", fileType: "pdf", fileSizeKb: 2800, contentType: "textbook", department: "Industrial Chemistry", faculty: "Physical Sciences", courseCode: "CHM 201", courseName: "Organic Chemistry", level: "200L", academicSession: "2023/2024", uploaderId: "u6", uploaderName: "Chika Nwankwo", uploaderUsername: "chikankwo", uploaderAvatar: "", isLecturerUpload: false, viewCount: 740, downloadCount: 290, likesCount: 56, commentsCount: 7, bookmarksCount: 18, isPinned: false, isApproved: true, isFeatured: false, tags: ["chemistry", "organic"], createdAt: null as any, updatedAt: null as any
-  },
-];
-
 // ── Filter helpers ────────────────────────────────────────────────
 const SORT_OPTIONS = [
   { value: "createdAt", label: "Most Recent" },
@@ -48,6 +26,23 @@ export default function LibraryPage() {
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [lecturerOnly, setLecturerOnly] = useState(false);
+  
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    import("firebase/firestore").then(({ collection, query, orderBy, onSnapshot }) => {
+      import("@/lib/firebase").then(({ db }) => {
+        const q = query(collection(db, "documents"), orderBy("createdAt", "desc"));
+        const unsub = onSnapshot(q, (snap) => {
+          const liveDocs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Document[];
+          setDocuments(liveDocs);
+          setLoading(false);
+        });
+        return () => unsub();
+      });
+    });
+  }, []);
 
   // Active filter chips
   const activeFilters = useMemo(() => {
@@ -76,23 +71,23 @@ export default function LibraryPage() {
 
   // Filtered documents
   const filteredDocs = useMemo(() => {
-    let docs = [...MOCK_DOCS];
+    let docs = [...documents];
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       docs = docs.filter(d => d.title.toLowerCase().includes(q) || d.courseCode.toLowerCase().includes(q));
     }
     if (selectedType) docs = docs.filter(d => d.contentType === selectedType);
-    if (selectedLevel) docs = docs.filter(d => d.level === `${selectedLevel}L`);
+    if (selectedLevel) docs = docs.filter(d => d.level === `${selectedLevel}L` || d.level === selectedLevel);
     if (selectedDept) docs = docs.filter(d => d.department === selectedDept);
     if (lecturerOnly) docs = docs.filter(d => d.isLecturerUpload);
     // Sort
     docs.sort((a, b) => {
-      if (sortBy === "downloadCount") return b.downloadCount - a.downloadCount;
-      if (sortBy === "likesCount") return b.likesCount - a.likesCount;
-      return 0; // createdAt — keep original order for mock
+      if (sortBy === "downloadCount") return (b.downloadCount || 0) - (a.downloadCount || 0);
+      if (sortBy === "likesCount") return (b.likesCount || 0) - (a.likesCount || 0);
+      return 0; // createdAt — keep original order from firestore
     });
     return docs;
-  }, [searchQuery, selectedType, selectedLevel, selectedDept, lecturerOnly, sortBy]);
+  }, [documents, searchQuery, selectedType, selectedLevel, selectedDept, lecturerOnly, sortBy]);
 
   return (
     <>
@@ -224,7 +219,7 @@ export default function LibraryPage() {
                   label={t.label}
                   emoji={t.emoji}
                   active={selectedType === t.value}
-                  count={MOCK_DOCS.filter(d => d.contentType === t.value).length}
+                  count={documents.filter(d => d.contentType === t.value).length}
                   onClick={() => setSelectedType(selectedType === t.value ? "" : t.value as ContentType)}
                 />
               ))}
@@ -235,7 +230,7 @@ export default function LibraryPage() {
                   key={l}
                   label={`${l} Level`}
                   active={selectedLevel === l}
-                  count={MOCK_DOCS.filter(d => d.level === `${l}L`).length}
+                  count={documents.filter(d => d.level === `${l}L`).length}
                   onClick={() => setSelectedLevel(selectedLevel === l ? "" : l)}
                 />
               ))}

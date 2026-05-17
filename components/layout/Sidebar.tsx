@@ -8,32 +8,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-const NAV_GROUPS = [
-  {
-    label: "Main",
-    items: [
-      { label: "Feed", href: "/feed", icon: Home },
-      { label: "Blog", href: "/blog", icon: BookOpen },
-      { label: "Explore", href: "/explore", icon: Compass },
-      { label: "Notifications", href: "/notifications", icon: Bell },
-      { label: "Library", href: "/library", icon: Library },
-    ],
-  },
-  {
-    label: "Content",
-    items: [
-      { label: "Write Post", href: "/blog/write", icon: PenSquare },
-    ],
-  },
-  {
-    label: "Profile",
-    items: [
-      { label: "My Profile", href: "/profile/me", icon: User },
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Settings", href: "/dashboard?tab=settings", icon: Settings },
-    ],
-  },
-];
 
 const CLASS_ADMIN_ITEMS = [
   { label: "Overview", href: "/class-admin", icon: ClipboardList },
@@ -54,6 +28,33 @@ export default function Sidebar() {
 
   const isClassAdmin = user?.role === "class_admin" && user?.classAdminDept && user?.classAdminLevel;
   const isSuperAdmin = user?.role === "super_admin";
+
+  const NAV_GROUPS = [
+    {
+      label: "Main",
+      items: [
+        { label: "Feed", href: "/feed", icon: Home },
+        { label: "Blog", href: "/blog", icon: BookOpen },
+        { label: "Explore", href: "/explore", icon: Compass },
+        { label: "Notifications", href: "/notifications", icon: Bell },
+        { label: "Library", href: "/library", icon: Library },
+      ],
+    },
+    {
+      label: "Content",
+      items: [
+        { label: "Write Post", href: "/blog/write", icon: PenSquare },
+      ],
+    },
+    {
+      label: "Profile",
+      items: [
+        { label: "My Profile", href: profileHref, icon: User },
+        { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+        { label: "Settings", href: "/dashboard?tab=settings", icon: Settings },
+      ],
+    },
+  ];
 
   return (
     <aside

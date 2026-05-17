@@ -1,50 +1,62 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, TrendingUp, Trophy, FileText, Hash, Download, Eye, Heart, ArrowUp } from "lucide-react";
-
-const TRENDING_DOCS = [
-  { id: "d1", title: "CSC 201 Past Questions 2024", type: "Past Questions", dept: "Computer Science", downloads: 1240, views: 3800, likes: 342, trending: "+18%", rank: 1 },
-  { id: "d2", title: "MTH 101 Lecture Notes", type: "Notes", dept: "Mathematics", downloads: 890, views: 2600, likes: 210, trending: "+12%", rank: 2 },
-  { id: "d3", title: "PHY 201 Lab Manual", type: "Handout", dept: "Physics", downloads: 650, views: 1900, likes: 178, trending: "+9%", rank: 3 },
-  { id: "d4", title: "ENG 111 Communication Skills", type: "Notes", dept: "English", downloads: 580, views: 1700, likes: 145, trending: "+7%", rank: 4 },
-  { id: "d5", title: "CSC 341 Compiler Design", type: "Notes", dept: "Computer Science", downloads: 520, views: 1500, likes: 134, trending: "+5%", rank: 5 },
-  { id: "d6", title: "CHM 201 Organic Chemistry", type: "Past Questions", dept: "Chemistry", downloads: 480, views: 1400, likes: 120, trending: "+4%", rank: 6 },
-];
-
-const TOP_CONTRIBUTORS = [
-  { rank: 1, name: "Dr. Okafor", username: "dr_okafor", dept: "Computer Science", points: 12400, uploads: 45, medal: "🥇" },
-  { rank: 2, name: "Ada Nwosu", username: "ada_nwosu", dept: "Computer Science", points: 9800, uploads: 38, medal: "🥈" },
-  { rank: 3, name: "Chukwuemeka", username: "emeka_tech", dept: "Electrical Eng.", points: 8200, uploads: 32, medal: "🥉" },
-  { rank: 4, name: "Jane Smith", username: "janesmith", dept: "Civil Engineering", points: 7100, uploads: 28 },
-  { rank: 5, name: "John Doe", username: "johndoe", dept: "Mathematics", points: 6500, uploads: 24 },
-  { rank: 6, name: "Chioma Eze", username: "chioma_eze", dept: "Electrical Eng.", points: 5900, uploads: 21 },
-  { rank: 7, name: "Tunde Lagos", username: "tunde_l", dept: "Civil Engineering", points: 5200, uploads: 18 },
-  { rank: 8, name: "Mary Johnson", username: "mary_j", dept: "Chemistry", points: 4800, uploads: 15 },
-];
-
-const TRENDING_TAGS = [
-  { icon: "📝", name: "#PastQuestions", count: 2400, color: "#F59E0B" },
-  { icon: "💻", name: "#CSC201", count: 1800, color: "#7C3AED" },
-  { icon: "📊", name: "#ExamPrep", count: 1200, color: "#06B6D4" },
-  { icon: "🔬", name: "#LabReports", count: 890, color: "#10B981" },
-  { icon: "📚", name: "#StudyGroup", count: 720, color: "#EC4899" },
-  { icon: "🎓", name: "#ProjectTopics", count: 650, color: "#F97316" },
-  { icon: "⚡", name: "#ESUT2025", count: 580, color: "#A855F7" },
-  { icon: "🏗️", name: "#CivilEng", count: 440, color: "#94A3B8" },
-];
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import type { Document, User } from "@/types";
 
 type ExploreTab = "trending" | "contributors" | "popular" | "tags";
+
+const TRENDING_TAGS = [
+  { name: "#CSC201", count: 2400, icon: "💻", color: "#7C3AED" },
+  { name: "#PastQuestions", count: 1800, icon: "📚", color: "#F59E0B" },
+  { name: "#ExamPrep", count: 1200, icon: "🎯", color: "#10B981" },
+  { name: "#ProjectTopics", count: 890, icon: "💡", color: "#3B82F6" },
+  { name: "#ESUT2025", count: 720, icon: "🎓", color: "#EC4899" },
+  { name: "#GST101", count: 650, icon: "📝", color: "#8B5CF6" },
+  { name: "#Engineering", count: 540, icon: "⚙️", color: "#F97316" },
+  { name: "#SIWES", count: 420, icon: "💼", color: "#06B6D4" },
+];
 
 export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<ExploreTab>("trending");
   const [searchQuery, setSearchQuery] = useState("");
+  const [trendingDocs, setTrendingDocs] = useState<(Document & { rank: number })[]>([]);
+  const [topContributors, setTopContributors] = useState<(User & { rank: number, medal?: string })[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadExploreData() {
+      try {
+        const [docsSnap, usersSnap] = await Promise.all([
+          getDocs(query(collection(db, "documents"), orderBy("downloadCount", "desc"), limit(6))),
+          getDocs(query(collection(db, "users"), limit(8))) // Need a real points system to sort contributors properly, for now fetching some users
+        ]);
+
+        const docs = docsSnap.docs.map((doc, i) => ({ id: doc.id, ...doc.data(), rank: i + 1 })) as any[];
+        setTrendingDocs(docs);
+
+        const users = usersSnap.docs.map((doc, i) => {
+          let medal;
+          if (i === 0) medal = "🥇";
+          else if (i === 1) medal = "🥈";
+          else if (i === 2) medal = "🥉";
+          return { id: doc.id, ...doc.data(), rank: i + 1, medal };
+        }) as any[];
+        setTopContributors(users);
+      } catch (e) {
+        console.error("Failed to load explore data", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadExploreData();
+  }, []);
 
   const tabs: { id: ExploreTab; label: string; icon: React.ElementType }[] = [
-    { id: "trending", label: "Trending", icon: TrendingUp },
+    { id: "trending", label: "Trending Docs", icon: TrendingUp },
     { id: "contributors", label: "Top Contributors", icon: Trophy },
-    { id: "popular", label: "Popular Posts", icon: FileText },
-    { id: "tags", label: "Tags", icon: Hash },
   ];
 
   const getRankBadgeClass = (rank: number) => {
@@ -92,7 +104,9 @@ export default function ExplorePage() {
       {/* ── Trending Documents Tab ──────────────────────── */}
       {activeTab === "trending" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-6" style={{ animation: "card-enter 0.4s both" }}>
-          {TRENDING_DOCS.map(doc => (
+          {loading ? (
+            <div className="col-span-full py-20 text-center text-text-muted">Loading trending documents...</div>
+          ) : trendingDocs.map(doc => (
             <Link
               key={doc.id}
               href={`/library/${doc.id}`}
@@ -103,15 +117,15 @@ export default function ExplorePage() {
                 {doc.rank}
               </div>
 
-              <span className="text-[11px] font-semibold uppercase tracking-[0.5px] text-brand-light">{doc.type}</span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.5px] text-brand-light">{doc.contentType}</span>
               <h3 className="text-[15px] font-bold text-text-primary mt-2 mb-1.5 leading-snug group-hover:text-brand-light transition-colors pr-8">{doc.title}</h3>
-              <p className="text-xs text-text-disabled mb-3">{doc.dept}</p>
+              <p className="text-xs text-text-disabled mb-3">{doc.department}</p>
 
               {/* Stats */}
               <div className="flex gap-3 pt-2.5 border-t border-white/[0.05]">
-                <span className="flex items-center gap-1.5 text-xs text-text-muted"><Download className="w-3 h-3" /> {doc.downloads.toLocaleString()}</span>
-                <span className="flex items-center gap-1.5 text-xs text-text-muted"><Eye className="w-3 h-3" /> {doc.views.toLocaleString()}</span>
-                <span className="flex items-center gap-1.5 text-xs text-success font-semibold text-[11px] ml-auto"><ArrowUp className="w-3 h-3" /> {doc.trending}</span>
+                <span className="flex items-center gap-1.5 text-xs text-text-muted"><Download className="w-3 h-3" /> {(doc.downloadCount || 0).toLocaleString()}</span>
+                <span className="flex items-center gap-1.5 text-xs text-text-muted"><Eye className="w-3 h-3" /> {(doc.viewCount || 0).toLocaleString()}</span>
+                <span className="flex items-center gap-1.5 text-xs text-success font-semibold text-[11px] ml-auto"><ArrowUp className="w-3 h-3" /> {(doc.likesCount || 0)}</span>
               </div>
             </Link>
           ))}
@@ -127,7 +141,9 @@ export default function ExplorePage() {
               <span className="text-[15px] font-bold text-text-primary flex items-center gap-2">🏆 Leaderboard</span>
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gold/10 text-gold border border-gold/20">This Month</span>
             </div>
-            {TOP_CONTRIBUTORS.map(u => (
+            {loading ? (
+              <div className="py-20 text-center text-text-muted">Loading leaderboard...</div>
+            ) : topContributors.map(u => (
               <Link
                 key={u.username}
                 href={`/profile/${u.username}`}
@@ -139,13 +155,13 @@ export default function ExplorePage() {
                   u.rank === 1 ? "text-gold" : u.rank === 2 ? "text-text-muted" : u.rank === 3 ? "text-orange-400" : "text-text-disabled"
                 }`}>{u.rank}</span>
                 {u.medal && <span className="text-lg shrink-0">{u.medal}</span>}
-                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt={u.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                <img src={u.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt={u.displayName} className="w-9 h-9 rounded-full object-cover shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-text-primary truncate">{u.name}</p>
-                  <p className="text-[11px] text-text-disabled truncate">{u.dept}</p>
+                  <p className="text-sm font-semibold text-text-primary truncate">{u.displayName}</p>
+                  <p className="text-[11px] text-text-disabled truncate">{u.department}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="font-display text-xl bg-[linear-gradient(135deg,#A855F7,#06B6D4)] bg-clip-text text-transparent block leading-none">{u.points.toLocaleString()}</span>
+                  <span className="font-display text-xl bg-[linear-gradient(135deg,#A855F7,#06B6D4)] bg-clip-text text-transparent block leading-none">{(u.uploadsCount || 0) * 10}</span>
                   <span className="text-[10px] text-text-disabled">points</span>
                 </div>
               </Link>

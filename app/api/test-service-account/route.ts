@@ -7,18 +7,14 @@ export async function GET() {
   try {
     let app;
     if (!getApps().length) {
-      if (!process.env.FIREBASE_PRIVATE_KEY) {
-        throw new Error("FIREBASE_PRIVATE_KEY is missing");
+      if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+        throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY is missing");
       }
       
-      const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n");
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
       
       app = initializeApp({
-        credential: cert({
-          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: privateKey,
-        }),
+        credential: cert(serviceAccount),
       });
     } else {
       app = getApp();
@@ -39,8 +35,8 @@ export async function GET() {
       message: "Firebase Admin SDK is active and correctly configured.",
       data: {
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        hasPrivateKey: !!process.env.FIREBASE_PRIVATE_KEY,
+        clientEmail: process.env.FIREBASE_SERVICE_ACCOUNT_KEY ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY).client_email : null,
+        hasPrivateKey: !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY,
         sampleUserCountFound: usersCount,
         firestoreAccess: testDoc.exists ? "Success" : "Success (Document doesn't exist but read was allowed)"
       }

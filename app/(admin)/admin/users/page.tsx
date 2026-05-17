@@ -6,7 +6,7 @@ import { DEPARTMENTS } from "@/constants/departments";
 import type { User } from "@/types";
 import {
   Search, ChevronDown, Users, Shield, Eye, Star,
-  Ban, X, Check, Loader2, Crown,
+  Ban, X, Check, Loader2, Crown, FileText
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";

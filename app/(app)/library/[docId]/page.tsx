@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { ZoomIn, ZoomOut, Download, ArrowLeft, RotateCcw } from "lucide-react";
+import { ZoomIn, ZoomOut, Download, ArrowLeft, RotateCcw, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import type { Document as LibraryDocument } from "@/types";
 
 /** 
  * Note: CSS imports for AnnotationLayer and TextLayer removed 
@@ -13,16 +16,40 @@ import { useRouter } from "next/navigation";
 // Worker configuration using a reliable CDN
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-const MOCK_PDF = "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf";
-
 export default function DocumentPreviewPage({ params }: { params: Promise<{ docId: string }> }) {
   const router = useRouter();
   const unwrappedParams = use(params);
   const [numPages, setNumPages] = useState<number>();
   const [scale, setScale] = useState(1.0);
+  const [document, setDocument] = useState<LibraryDocument | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadDoc() {
+      try {
+        const snap = await getDoc(doc(db, "documents", unwrappedParams.docId));
+        if (snap.exists()) {
+          setDocument({ id: snap.id, ...snap.data() } as LibraryDocument);
+        }
+      } catch (err) {
+        console.error("Failed to fetch doc:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDoc();
+  }, [unwrappedParams.docId]);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
     setNumPages(numPages);
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-brand" /></div>;
+  }
+
+  if (!document) {
+    return <div className="text-center py-20 text-text-muted">Document not found.</div>;
   }
 
   return (
@@ -39,15 +66,15 @@ export default function DocumentPreviewPage({ params }: { params: Promise<{ docI
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="font-display text-[20px] md:text-3xl text-text-primary mb-1 break-words">
-            MTH101 General Mathematics I Notes
+            {document.title}
           </h1>
           <p className="text-text-muted text-[12px] md:text-sm">
-            Uploaded by @johndoe • PDF • 2.5MB
+            Uploaded by @{document.uploaderUsername || "anonymous"} • {document.contentType} • {document.courseCode || "No Course"}
           </p>
         </div>
-        <button className="h-9 md:h-10 px-4 bg-brand/10 text-brand-light font-medium rounded-lg hover:bg-brand/20 flex items-center gap-2 transition-all shrink-0 text-sm w-full sm:w-auto justify-center">
+        <a href={document.fileUrl} download className="h-9 md:h-10 px-4 bg-brand/10 text-brand-light font-medium rounded-lg hover:bg-brand/20 flex items-center gap-2 transition-all shrink-0 text-sm w-full sm:w-auto justify-center">
           <Download className="w-4 h-4" /> Download
-        </button>
+        </a>
       </div>
 
       {/* PDF Viewer Container — FULLY CONTAINED, zoom does NOT push page */}
@@ -99,37 +126,52 @@ export default function DocumentPreviewPage({ params }: { params: Promise<{ docI
           style={{ maxHeight: "calc(70vh)", WebkitOverflowScrolling: "touch" }}
         >
           <div className="p-3 md:p-5 flex flex-col items-center gap-3 md:gap-4 min-w-fit">
-            <Document 
-              file={MOCK_PDF} 
-              onLoadSuccess={onDocumentLoadSuccess}
-              loading={
-                <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3">
-                  <span className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm">Loading PDF document...</p>
-                </div>
-              }
-              error={<div className="p-8 md:p-12 text-center text-text-muted text-sm">Failed to load PDF document.</div>}
-            >
-              {Array.from(new Array(numPages || 0), (_, index) => (
-                <div 
-                  key={`page_${index + 1}`} 
-                  className="mb-3 md:mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)] rounded bg-white overflow-hidden"
-                >
-                  <Page 
-                    pageNumber={index + 1} 
-                    scale={scale} 
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
-                    loading={
-                      <div 
-                        style={{ width: Math.min(600, 320) * scale, height: Math.min(800, 450) * scale }} 
-                        className="bg-white/5 animate-pulse" 
-                      />
-                    }
-                  />
-                </div>
-              ))}
-            </Document>
+            {document.fileUrl.endsWith('.pdf') || document.fileUrl.includes('pdf') ? (
+              <Document 
+                file={document.fileUrl} 
+                onLoadSuccess={onDocumentLoadSuccess}
+                loading={
+                  <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3">
+                    <span className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm">Loading PDF document...</p>
+                  </div>
+                }
+                error={<div className="p-8 md:p-12 text-center text-text-muted text-sm">Failed to load PDF document. You can still download it above.</div>}
+              >
+                {Array.from(new Array(numPages || 0), (_, index) => (
+                  <div 
+                    key={`page_${index + 1}`} 
+                    className="mb-3 md:mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)] rounded bg-white overflow-hidden"
+                  >
+                    <Page 
+                      pageNumber={index + 1} 
+                      scale={scale} 
+                      renderTextLayer={false}
+                      renderAnnotationLayer={false}
+                      loading={
+                        <div 
+                          style={{ width: Math.min(600, 320) * scale, height: Math.min(800, 450) * scale }} 
+                          className="bg-white/5 animate-pulse" 
+                        />
+                      }
+                    />
+                  </div>
+                ))}
+              </Document>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 md:p-16 text-center">
+                {document.fileUrl.match(/\.(jpeg|jpg|gif|png)$/i) || document.fileUrl.includes('image') ? (
+                  <img src={document.fileUrl} alt={document.title} className="max-w-full rounded-lg shadow-lg" />
+                ) : (
+                  <div className="text-text-muted space-y-4">
+                    <p>This file type cannot be previewed directly in the browser.</p>
+                    <a href={document.fileUrl} download className="inline-block px-6 py-2.5 bg-brand text-white font-semibold rounded-lg hover:bg-brand-light transition-colors">
+                      Download File
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
