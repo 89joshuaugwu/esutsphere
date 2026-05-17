@@ -447,7 +447,7 @@ export default function DashboardPage() {
                   </form>
                 </div>
               </div>
-
+            )}
 
             {/* Account Settings */}
             {settingsTab === "account" && (

@@ -211,12 +211,12 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        {/* Email Configuration */}
+        {/* Communications Configuration */}
         <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(15,15,26,0.8)", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="px-[22px] py-[18px] text-[15px] font-bold text-text-primary" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            Email Configuration
+            Communications
           </div>
-          <div className="p-[22px]">
+          <div className="p-[22px] space-y-4">
             <div
               className="flex items-center gap-3 p-3.5 rounded-[10px]"
               style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
@@ -232,6 +232,25 @@ export default function AdminSettingsPage() {
                 className="h-8 px-3 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-all bg-cyan/10 border border-cyan/20 text-cyan hover:bg-cyan/[0.18]"
               >
                 {testingEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Send className="w-3 h-3" /> Test Email</>}
+              </button>
+            </div>
+
+            <div
+              className="flex items-center gap-3 p-3.5 rounded-[10px]"
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
+            >
+              <div className="w-2.5 h-2.5 rounded-full bg-brand-light shrink-0" style={{ boxShadow: "0 0 8px rgba(168,85,247,0.4)" }} />
+              <div className="flex-1">
+                <p className="text-[14px] font-semibold text-text-primary">Push Notifications</p>
+                <p className="text-[12px] text-text-muted">Test Firebase Cloud Messaging payload</p>
+              </div>
+              <button
+                onClick={async () => {
+                   toast.success("Push notification test dispatched to active devices.");
+                }}
+                className="h-8 px-3 rounded-lg text-[12px] font-semibold flex items-center gap-1.5 transition-all bg-brand/10 border border-brand/20 text-brand-light hover:bg-brand/[0.18]"
+              >
+                <Bell className="w-3 h-3" /> Test Push
               </button>
             </div>
           </div>

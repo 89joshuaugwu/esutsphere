@@ -273,6 +273,16 @@ export default function UsersPage() {
                         >
                           <Eye className="w-3 h-3" /> View
                         </Link>
+                        {u.admissionLetterUrl && (
+                          <a
+                            href={u.admissionLetterUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="h-7 px-2.5 rounded-[7px] text-[11px] font-semibold flex items-center gap-1 transition-all bg-cyan/[0.08] border border-cyan/20 text-cyan hover:bg-cyan/[0.16]"
+                          >
+                            <FileText className="w-3 h-3" /> Doc
+                          </a>
+                        )}
                         {u.role === "student" && u.approvalStatus === "approved" && (
                           <button
                             onClick={() => { setAssignModal(u); setAssignDept(u.department); setAssignLevel(u.currentLevel); }}

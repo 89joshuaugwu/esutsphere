@@ -7,49 +7,36 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Post, PostCategory } from "@/types";
 
 // ── Mock Data ─────────────────────────────────────────────────────
-const MOCK_POSTS: (Post & { authorDept?: string })[] = [
-  {
-    id: "1", slug: "tech-fest-2025", title: "Everything You Missed at the ESUT Tech Fest 2025", coverImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=60", excerpt: "From robotics displays to coding hackathons, this year's Tech Fest was nothing short of spectacular. Over 20 teams competed in the 24-hour hackathon.", content: "", readingTimeMinutes: 5, category: "campus_news", tags: ["tech", "events"], authorId: "u1", authorName: "Jane Smith", authorUsername: "janesmith", authorAvatar: "", authorDept: "Computer Science", likesCount: 89, commentsCount: 24, viewCount: 432, bookmarksCount: 15, isPublished: true, isFeatured: true, createdAt: null as any, updatedAt: null as any, publishedAt: null as any,
-  },
-  {
-    id: "2", slug: "exam-prep-guide", title: "The Ultimate Guide to Surviving First Semester Exams", coverImage: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&auto=format&fit=crop&q=60", excerpt: "Late night studying? Here are proven techniques to retain information faster and ace your exams without burning out.", content: "", readingTimeMinutes: 8, category: "academic", tags: ["study", "exams"], authorId: "u2", authorName: "John Doe", authorUsername: "johndoe", authorAvatar: "", authorDept: "Industrial Physics", likesCount: 156, commentsCount: 42, viewCount: 1240, bookmarksCount: 67, isPublished: true, isFeatured: false, createdAt: null as any, updatedAt: null as any, publishedAt: null as any,
-  },
-  {
-    id: "3", slug: "ai-revolution-esut", title: "How AI is Changing Everything for Nigerian CS Students", coverImage: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop&q=60", excerpt: "From ChatGPT to Gemini — how ESUT students are leveraging AI tools for learning, research, and building projects.", content: "", readingTimeMinutes: 6, category: "tech", tags: ["ai", "cs"], authorId: "u3", authorName: "Joshua Ugwu", authorUsername: "joshuazaza", authorAvatar: "", authorDept: "Computer Science", likesCount: 203, commentsCount: 56, viewCount: 2100, bookmarksCount: 89, isPublished: true, isFeatured: false, createdAt: null as any, updatedAt: null as any, publishedAt: null as any,
-  },
-  {
-    id: "4", slug: "internship-guide-2025", title: "Landing Your First Tech Internship as an ESUT Student", coverImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&auto=format&fit=crop&q=60", excerpt: "A practical roadmap to getting noticed by Nigerian tech companies and international remote opportunities.", content: "", readingTimeMinutes: 10, category: "career", tags: ["career", "internship"], authorId: "u4", authorName: "Temi Adewale", authorUsername: "temilade", authorAvatar: "", authorDept: "Business Administration", likesCount: 178, commentsCount: 35, viewCount: 1890, bookmarksCount: 92, isPublished: true, isFeatured: false, createdAt: null as any, updatedAt: null as any, publishedAt: null as any,
-  },
-  {
-    id: "5", slug: "campus-food-guide", title: "The Unofficial ESUT Campus Food Survival Guide", coverImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop&q=60", excerpt: "Where to eat, what to avoid, and the hidden gems around campus that every student should know about.", content: "", readingTimeMinutes: 4, category: "lifestyle", tags: ["food", "campus"], authorId: "u5", authorName: "Chika Nwankwo", authorUsername: "chikankwo", authorAvatar: "", authorDept: "Industrial Chemistry", likesCount: 95, commentsCount: 19, viewCount: 680, bookmarksCount: 28, isPublished: true, isFeatured: false, createdAt: null as any, updatedAt: null as any, publishedAt: null as any,
-  },
-  {
-    id: "6", slug: "student-politics", title: "Why Student Union Politics Matter More Than You Think", coverImage: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=800&auto=format&fit=crop&q=60", excerpt: "A deep dive into how student government decisions directly affect your academic experience at ESUT.", content: "", readingTimeMinutes: 7, category: "opinions", tags: ["politics", "student"], authorId: "u6", authorName: "Emeka Obi", authorUsername: "emekaobi", authorAvatar: "", authorDept: "Political Science", likesCount: 67, commentsCount: 31, viewCount: 540, bookmarksCount: 12, isPublished: true, isFeatured: false, createdAt: null as any, updatedAt: null as any, publishedAt: null as any,
-  },
-];
-
-const CATEGORY_COLORS: Record<string, string> = {
-  campus_news: "bg-cyan/[0.12] text-cyan border-cyan/25",
-  academic: "bg-brand/[0.12] text-brand-light border-brand/25",
-  tech: "bg-success/[0.12] text-success border-success/25",
-  career: "bg-gold/[0.12] text-gold border-gold/25",
-  opinions: "bg-[rgba(249,115,22,0.12)] text-[#F97316] border-[rgba(249,115,22,0.25)]",
-  lifestyle: "bg-[rgba(236,72,153,0.12)] text-[#EC4899] border-[rgba(236,72,153,0.25)]",
-};
-
 const ALL_CATEGORIES = [{ value: "all", label: "All", emoji: "📋" }, ...POST_CATEGORIES];
 
 export default function BlogListingPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const { user } = useAuth();
   const isLoggedIn = !!user;
+  
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const featuredPost = MOCK_POSTS.find(p => p.isFeatured);
+  useEffect(() => {
+    import("firebase/firestore").then(({ collection, query, orderBy, onSnapshot }) => {
+      import("@/lib/firebase").then(({ db }) => {
+        const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+        const unsub = onSnapshot(q, (snap) => {
+          const livePosts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Post[];
+          setPosts(livePosts);
+          setLoading(false);
+        });
+        return () => unsub();
+      });
+    });
+  }, []);
+
+  const featuredPost = posts.find(p => p.isFeatured) || posts[0]; // fallback to latest
   const filteredPosts = useMemo(() => {
-    const posts = MOCK_POSTS.filter(p => !p.isFeatured);
-    if (activeCategory === "all") return posts;
-    return posts.filter(p => p.category === activeCategory);
-  }, [activeCategory]);
+    const list = posts.filter(p => p.id !== featuredPost?.id);
+    if (activeCategory === "all") return list;
+    return list.filter(p => p.category === activeCategory);
+  }, [posts, activeCategory, featuredPost]);
 
   return (
     <div className="space-y-0 -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8">
