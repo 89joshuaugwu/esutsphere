@@ -110,11 +110,60 @@ export default function WriteBlogPage() {
     if (!title.trim()) return toast.error("Please add a title.");
     if (!editor || editor.isEmpty) return toast.error("Content cannot be empty.");
     if (!category) return toast.error("Please select a category.");
+    if (!user) return toast.error("You must be logged in.");
 
     setIsPublishing(true);
-    await new Promise(r => setTimeout(r, 1500));
-    toast.success("Blog published successfully!");
-    router.push("/blog");
+    let uploadedCoverUrl = "";
+
+    try {
+      if (coverFile) {
+        toast.loading("Uploading cover image...", { id: "blog-publish" });
+        const fd = new FormData();
+        fd.append("file", coverFile);
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        uploadedCoverUrl = data.url;
+      }
+
+      toast.loading("Publishing post...", { id: "blog-publish" });
+      const { collection, addDoc, Timestamp } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+      
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+      const excerptText = editor.state.doc.textContent.substring(0, 160) + "...";
+
+      await addDoc(collection(db, "posts"), {
+        slug,
+        title: title.trim(),
+        coverImage: uploadedCoverUrl,
+        excerpt: excerptText,
+        content: editor.getHTML(),
+        readingTimeMinutes: Math.max(1, Math.ceil(wordCount / 200)),
+        category,
+        tags,
+        authorId: user.uid,
+        authorName: user.displayName,
+        authorUsername: user.username,
+        authorAvatar: user.profilePicture,
+        likesCount: 0,
+        commentsCount: 0,
+        viewCount: 0,
+        bookmarksCount: 0,
+        isPublished: true,
+        isFeatured: false,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        publishedAt: Timestamp.now(),
+      });
+
+      toast.success("Blog published successfully!", { id: "blog-publish" });
+      router.push("/blog");
+    } catch (err: any) {
+      toast.error("Failed to publish: " + err.message, { id: "blog-publish" });
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const toolbarBtn = (active: boolean) =>

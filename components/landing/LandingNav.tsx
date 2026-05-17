@@ -47,7 +47,7 @@ export default function LandingNav() {
         >
           {/* Logo + Gradient Wordmark */}
           <Link href="/" className="flex items-center px-3 shrink-0">
-            <Logo variant="compact" size="sm" />
+            <Logo variant="full" size="sm" />
           </Link>
 
           {/* Desktop Nav Links */}

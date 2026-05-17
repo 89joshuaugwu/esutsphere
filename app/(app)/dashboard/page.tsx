@@ -53,6 +53,11 @@ export default function DashboardPage() {
   // Admin notification emails
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
+  
+  // Loading states
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -307,15 +312,49 @@ export default function DashboardPage() {
               <div className="space-y-5">
                 <div className="bg-[rgba(18,18,32,0.7)] border border-white/[0.07] rounded-2xl overflow-hidden">
                   <div className="px-[22px] py-[18px] border-b border-white/[0.06] text-[15px] font-bold text-text-primary">Profile Information</div>
-                  <div className="p-[22px] space-y-5">
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!user) return;
+                    try {
+                      const fd = new FormData(e.currentTarget);
+                      const displayName = fd.get("displayName") as string;
+                      const bio = fd.get("bio") as string;
+                      await updateDoc(doc(db, "users", user.uid), { displayName, bio });
+                      toast.success("Profile updated");
+                      refreshUser();
+                    } catch (err: any) {
+                      toast.error("Failed to save: " + err.message);
+                    }
+                  }} className="p-[22px] space-y-5">
                     {/* Profile Photo */}
                     <div className="flex items-center gap-4 md:gap-5 pb-5 border-b border-white/[0.06]">
                       <img src={avatarUrl} alt="" className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-[3px] border-brand/30 shrink-0" />
                       <div className="flex flex-col gap-2">
-                        <button className="h-[34px] px-3.5 rounded-lg bg-brand/[0.12] border border-brand/30 text-brand-light text-[13px] font-semibold hover:bg-brand/[0.22] transition-all flex items-center gap-1.5">
+                        <input type="file" id="avatar-photo-input" className="hidden" accept="image/*" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file || !user) return;
+                          try {
+                            toast.loading("Uploading avatar...", { id: "avatar-upload" });
+                            const fd = new FormData();
+                            fd.append("file", file);
+                            const res = await fetch("/api/upload", { method: "POST", body: fd });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error);
+                            await updateDoc(doc(db, "users", user.uid), { profilePicture: data.url });
+                            toast.success("Avatar updated", { id: "avatar-upload" });
+                            refreshUser();
+                          } catch (err: any) {
+                            toast.error("Upload failed: " + err.message, { id: "avatar-upload" });
+                          }
+                        }} />
+                        <button type="button" onClick={() => document.getElementById("avatar-photo-input")?.click()} className="h-[34px] px-3.5 rounded-lg bg-brand/[0.12] border border-brand/30 text-brand-light text-[13px] font-semibold hover:bg-brand/[0.22] transition-all flex items-center gap-1.5">
                           <Camera className="w-3.5 h-3.5" /> Change Photo
                         </button>
-                        <button className="h-[34px] px-3.5 rounded-lg bg-transparent border border-error/25 text-error text-[13px] font-medium hover:bg-error/10 transition-all">
+                        <button type="button" onClick={async () => {
+                          if (!user) return;
+                          await updateDoc(doc(db, "users", user.uid), { profilePicture: "" });
+                          refreshUser();
+                        }} className="h-[34px] px-3.5 rounded-lg bg-transparent border border-error/25 text-error text-[13px] font-medium hover:bg-error/10 transition-all text-left">
                           Remove
                         </button>
                       </div>
@@ -324,62 +363,58 @@ export default function DashboardPage() {
                     {/* Cover Photo */}
                     <div className="pb-5 border-b border-white/[0.06]">
                       <label className="text-[13px] font-medium text-text-secondary block mb-2.5">Cover Photo</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        id="cover-photo-input"
-                        className="hidden"
-                        onChange={(e) => {
+                      <input type="file" id="cover-photo-input" className="hidden" accept="image/*" onChange={async (e) => {
                           const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              const preview = document.getElementById("cover-preview") as HTMLImageElement;
-                              const empty = document.getElementById("cover-empty");
-                              const overlay = document.getElementById("cover-overlay");
-                              if (preview) {
-                                preview.src = reader.result as string;
-                                preview.classList.remove("hidden");
-                              }
-                              if (empty) empty.classList.add("hidden");
-                              if (overlay) overlay.classList.remove("hidden");
-                              // TODO: Upload to Firebase Storage
-                              import("react-hot-toast").then(({ default: toast }) => toast.success("Cover photo selected! Save to apply."));
-                            };
-                            reader.readAsDataURL(file);
+                          if (!file || !user) return;
+                          try {
+                            toast.loading("Uploading cover...", { id: "cover-upload" });
+                            const fd = new FormData();
+                            fd.append("file", file);
+                            const res = await fetch("/api/upload", { method: "POST", body: fd });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error);
+                            await updateDoc(doc(db, "users", user.uid), { coverPhoto: data.url });
+                            toast.success("Cover updated", { id: "cover-upload" });
+                            refreshUser();
+                          } catch (err: any) {
+                            toast.error("Upload failed: " + err.message, { id: "cover-upload" });
                           }
-                        }}
-                      />
+                        }} />
                       <div
                         className="w-full h-[120px] md:h-[180px] rounded-xl border-2 border-dashed border-white/[0.1] bg-white/[0.02] relative overflow-hidden group cursor-pointer hover:border-brand/30 transition-all"
                         onClick={() => document.getElementById("cover-photo-input")?.click()}
                       >
                         {user?.coverPhoto ? (
                           <>
-                            <img id="cover-preview" src={user.coverPhoto} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
-                            <div id="cover-overlay" className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={(e) => { e.stopPropagation(); document.getElementById("cover-photo-input")?.click(); }} className="h-8 px-3.5 rounded-lg bg-white/15 text-text-primary text-[12px] font-semibold hover:bg-white/25 transition-all">Change</button>
-                              <button onClick={(e) => { e.stopPropagation(); }} className="h-8 px-3.5 rounded-lg bg-error/15 border border-error/30 text-error text-[12px] font-semibold hover:bg-error/25 transition-all">Remove</button>
+                            <img src={user.coverPhoto} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button type="button" onClick={(e) => { e.stopPropagation(); document.getElementById("cover-photo-input")?.click(); }} className="h-8 px-3.5 rounded-lg bg-white/15 text-text-primary text-[12px] font-semibold hover:bg-white/25 transition-all">Change</button>
+                              <button type="button" onClick={async (e) => { 
+                                e.stopPropagation(); 
+                                if (!user) return;
+                                await updateDoc(doc(db, "users", user.uid), { coverPhoto: "" });
+                                refreshUser();
+                              }} className="h-8 px-3.5 rounded-lg bg-error/15 border border-error/30 text-error text-[12px] font-semibold hover:bg-error/25 transition-all">Remove</button>
                             </div>
                           </>
                         ) : (
                           <>
-                            <img id="cover-preview" src="" alt="" className="absolute inset-0 w-full h-full object-cover hidden" />
-                            <div id="cover-overlay" className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3 hidden opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={(e) => { e.stopPropagation(); document.getElementById("cover-photo-input")?.click(); }} className="h-8 px-3.5 rounded-lg bg-white/15 text-text-primary text-[12px] font-semibold hover:bg-white/25 transition-all">Change</button>
-                            </div>
-                            <div id="cover-empty" className="flex flex-col items-center justify-center h-full gap-1.5">
+                            <div className="flex flex-col items-center justify-center h-full gap-1.5 relative z-10 group-hover:opacity-0 transition-opacity">
                               <Camera className="w-5 h-5 text-text-disabled" />
                               <span className="text-[12px] text-text-disabled">Click to upload cover photo</span>
+                            </div>
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                              <button type="button" onClick={(e) => { e.stopPropagation(); document.getElementById("cover-photo-input")?.click(); }} className="h-8 px-3.5 rounded-lg bg-white/15 text-text-primary text-[12px] font-semibold hover:bg-white/25 transition-all">Upload Cover</button>
                             </div>
                           </>
                         )}
                       </div>
                     </div>
+
                     {/* Editable Fields */}
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[13px] font-medium text-text-secondary">Display Name</label>
-                      <input type="text" defaultValue={user?.displayName || ""} className="h-11 bg-white/[0.04] border border-white/10 rounded-[10px] px-3.5 text-text-primary text-sm outline-hidden focus:border-brand focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] transition-all" />
+                      <input type="text" name="displayName" defaultValue={user?.displayName || ""} className="h-11 bg-white/[0.04] border border-white/10 rounded-[10px] px-3.5 text-text-primary text-sm outline-hidden focus:border-brand focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] transition-all" />
                     </div>
                     {/* Read-only: Username */}
                     <div className="flex flex-col gap-1.5">
@@ -391,7 +426,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[13px] font-medium text-text-secondary">Bio</label>
-                      <textarea defaultValue={user?.bio || ""} maxLength={160} rows={3} className="bg-white/[0.04] border border-white/10 rounded-[10px] p-3.5 text-text-primary text-sm outline-hidden focus:border-brand focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] transition-all resize-none" />
+                      <textarea name="bio" defaultValue={user?.bio || ""} maxLength={160} rows={3} className="bg-white/[0.04] border border-white/10 rounded-[10px] p-3.5 text-text-primary text-sm outline-hidden focus:border-brand focus:shadow-[0_0_0_3px_rgba(124,58,237,0.12)] transition-all resize-none" />
                     </div>
                     {/* Read-only fields */}
                     {[
@@ -406,13 +441,13 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     ))}
-                    <button className="h-[42px] px-[22px] rounded-[10px] bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold shadow-[0_4px_14px_rgba(124,58,237,0.35)] hover:-translate-y-px hover:shadow-[0_6px_20px_rgba(124,58,237,0.5)] transition-all">
-                      Save Changes
+                    <button type="submit" disabled={savingProfile} className="h-[42px] px-[22px] rounded-[10px] bg-[linear-gradient(135deg,#7C3AED,#A855F7)] text-white text-sm font-bold shadow-[0_4px_14px_rgba(124,58,237,0.35)] hover:-translate-y-px hover:shadow-[0_6px_20px_rgba(124,58,237,0.5)] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                      {savingProfile ? "Saving..." : "Save Changes"}
                     </button>
-                  </div>
+                  </form>
                 </div>
               </div>
-            )}
+
 
             {/* Account Settings */}
             {settingsTab === "account" && (

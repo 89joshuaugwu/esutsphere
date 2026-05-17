@@ -1,11 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Settings, Shield, Bell, Mail, AlertTriangle,
   Check, Send, Loader2, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { db } from "@/lib/firebase";
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 
 export default function AdminSettingsPage() {
   const { user: admin } = useAuth();
@@ -17,17 +19,44 @@ export default function AdminSettingsPage() {
   const [testingEmail, setTestingEmail] = useState(false);
   const [maintenanceConfirm, setMaintenanceConfirm] = useState(false);
 
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "settings", "global"), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setMaintenanceMode(data.maintenanceMode ?? false);
+        setRegistrationOpen(data.registrationOpen ?? true);
+        setAutoApproval(data.autoApproval ?? false);
+        setAnnouncement(data.announcement ?? "");
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const updateSetting = async (key: string, value: any) => {
+    try {
+      const ref = doc(db, "settings", "global");
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        await setDoc(ref, { [key]: value });
+      } else {
+        await updateDoc(ref, { [key]: value });
+      }
+    } catch (err: any) {
+      toast.error("Failed to update setting: " + err.message);
+    }
+  };
+
   const handleMaintenanceToggle = () => {
     if (!maintenanceMode) {
       setMaintenanceConfirm(true);
     } else {
-      setMaintenanceMode(false);
+      updateSetting("maintenanceMode", false);
       toast.success("Maintenance mode disabled");
     }
   };
 
   const confirmMaintenance = () => {
-    setMaintenanceMode(true);
+    updateSetting("maintenanceMode", true);
     setMaintenanceConfirm(false);
     toast.success("Maintenance mode enabled — site is now offline for users");
   };
@@ -123,7 +152,11 @@ export default function AdminSettingsPage() {
                   Allow new students to register on ESUTSphere.
                 </p>
               </div>
-              <Toggle on={registrationOpen} onToggle={() => { setRegistrationOpen(!registrationOpen); toast.success(registrationOpen ? "Registration closed" : "Registration opened"); }} />
+              <Toggle on={registrationOpen} onToggle={() => {
+                const newVal = !registrationOpen;
+                updateSetting("registrationOpen", newVal);
+                toast.success(newVal ? "Registration opened" : "Registration closed");
+              }} />
             </div>
 
             {/* Auto-approval */}
@@ -137,7 +170,11 @@ export default function AdminSettingsPage() {
                   Automatically approve new registrations without admin review. <strong className="text-warning">Not recommended.</strong>
                 </p>
               </div>
-              <Toggle on={autoApproval} onToggle={() => { setAutoApproval(!autoApproval); toast.success(autoApproval ? "Auto-approval disabled" : "Auto-approval enabled"); }} />
+              <Toggle on={autoApproval} onToggle={() => {
+                const newVal = !autoApproval;
+                updateSetting("autoApproval", newVal);
+                toast.success(newVal ? "Auto-approval enabled" : "Auto-approval disabled");
+              }} />
             </div>
           </div>
         </div>
@@ -146,12 +183,20 @@ export default function AdminSettingsPage() {
         <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(15,15,26,0.8)", border: "1px solid rgba(255,255,255,0.07)" }}>
           <div className="px-[22px] py-[18px] text-[15px] font-bold text-text-primary flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             Announcement Banner
-            <Toggle on={showAnnouncement} onToggle={() => setShowAnnouncement(!showAnnouncement)} />
+            <Toggle on={showAnnouncement} onToggle={() => {
+              const newVal = !showAnnouncement;
+              setShowAnnouncement(newVal);
+              updateSetting("announcement", newVal ? announcement : "");
+              toast.success(newVal ? "Announcement broadcasted" : "Announcement hidden");
+            }} />
           </div>
           <div className="p-[22px]">
             <textarea
               value={announcement}
               onChange={(e) => setAnnouncement(e.target.value)}
+              onBlur={() => {
+                 if (showAnnouncement) updateSetting("announcement", announcement);
+              }}
               placeholder="Enter site-wide announcement text..."
               className="w-full h-20 px-3.5 py-2.5 rounded-[10px] bg-white/[0.04] border border-white/10 text-[14px] text-text-primary resize-none focus:border-brand/50 outline-hidden transition-all mb-3"
             />

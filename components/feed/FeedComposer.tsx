@@ -21,21 +21,24 @@ const CATEGORIES = [
 interface FeedComposerProps {
   isOpen: boolean;
   onClose: () => void;
-  onPost?: (post: { content: string; category: string; tags: string[] }) => void;
+  onPost?: (post: { title?: string; content: string; category: string; tags: string[]; imageUrl?: string }) => void;
 }
 
 export default function FeedComposer({ isOpen, onClose, onPost }: FeedComposerProps) {
   const { user } = useAuth();
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [posting, setPosting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const avatarUrl = user?.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || "anon"}`;
   const charCount = content.length;
-  const canPost = content.trim().length > 0 && content.length <= MAX_CHARS;
+  const canPost = (content.trim().length > 0 || imageUrl) && content.length <= MAX_CHARS;
 
   const handleAddTag = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && tagInput.trim() && tags.length < 5) {
@@ -50,16 +53,35 @@ export default function FeedComposer({ isOpen, onClose, onPost }: FeedComposerPr
 
   const removeTag = (t: string) => setTags(tags.filter(tag => tag !== t));
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setImageUrl(data.url);
+    } catch (err: any) {
+      toast.error("Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handlePost = async () => {
     if (!canPost) return;
     setPosting(true);
     try {
-      // TODO: Firestore integration
-      onPost?.({ content, category, tags });
+      await onPost?.({ title: title.trim(), content, category, tags, imageUrl });
       toast.success("Post published! 🎉");
+      setTitle("");
       setContent("");
       setCategory("");
       setTags([]);
+      setImageUrl("");
       onClose();
     } catch {
       toast.error("Failed to post");
@@ -119,17 +141,37 @@ export default function FeedComposer({ isOpen, onClose, onPost }: FeedComposerPr
               alt={user?.displayName || "User"}
               className="w-10 h-10 rounded-full border border-white/10 object-cover shrink-0"
             />
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 flex flex-col gap-2">
               <p className="text-[13px] font-semibold text-text-primary mb-1">{user?.displayName || "You"}</p>
+              
+              {/* Optional Title */}
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Optional title..."
+                className="w-full bg-transparent text-[16px] font-bold text-text-primary placeholder:text-text-disabled outline-hidden"
+              />
+
               <textarea
                 ref={textareaRef}
                 value={content}
                 onChange={autoResize}
                 placeholder="What's happening on campus? Share updates, tips, or questions..."
-                className="w-full bg-transparent text-[15px] text-text-primary placeholder:text-text-disabled resize-none outline-hidden leading-[24px] min-h-[80px]"
+                className="w-full bg-transparent text-[14px] text-text-primary placeholder:text-text-disabled resize-none outline-hidden leading-[22px] min-h-[60px]"
                 maxLength={MAX_CHARS + 50}
                 autoFocus
               />
+
+              {/* Image Preview */}
+              {imageUrl && (
+                <div className="relative mt-2 rounded-xl overflow-hidden border border-white/[0.08]">
+                  <img src={imageUrl} alt="Upload preview" className="w-full max-h-[300px] object-cover" />
+                  <button onClick={() => setImageUrl("")} className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-all">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -164,6 +206,15 @@ export default function FeedComposer({ isOpen, onClose, onPost }: FeedComposerPr
         <div className="px-4 sm:px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
           {/* Category Picker */}
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-2.5 -mx-1 px-1">
+            <input type="file" id="feed-image-upload" className="hidden" accept="image/*" onChange={handleImageUpload} />
+            <button
+              onClick={() => document.getElementById("feed-image-upload")?.click()}
+              disabled={uploadingImage}
+              className="shrink-0 flex items-center justify-center w-[30px] h-[30px] rounded-full bg-white/[0.04] text-text-muted hover:bg-white/[0.08] hover:text-text-primary transition-all disabled:opacity-50"
+            >
+              {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+            </button>
+            <div className="w-px h-[20px] bg-white/[0.1] mx-1 my-auto shrink-0" />
             {CATEGORIES.map(cat => (
               <button
                 key={cat.id}

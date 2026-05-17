@@ -42,7 +42,7 @@ export default function AppLayout({
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden">
       <TopNav />
-      <div className="flex flex-1 overflow-x-hidden">
+      <div className="flex flex-1 overflow-x-hidden pt-[var(--nav-height)]">
         <Sidebar />
         <main className="flex-1 md:ml-[var(--sidebar-width)] pb-[calc(var(--nav-height)+env(safe-area-inset-bottom))] md:pb-0 relative min-h-[calc(100vh-var(--nav-height))] overflow-x-hidden min-w-0">
           {/* Pending user FOMO banner */}

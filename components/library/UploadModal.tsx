@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { X, UploadCloud, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 type Step = 1 | 2 | 3;
 
@@ -21,8 +22,10 @@ export default function UploadModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
   const handleNext = () => setStep(2);
   
+  const { user } = useAuth();
+
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file || !user) return;
     setIsUploading(true);
     setProgress(30);
 
@@ -39,6 +42,39 @@ export default function UploadModal({ isOpen, onClose }: { isOpen: boolean; onCl
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       
+      const { collection, addDoc, Timestamp } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+      
+      await addDoc(collection(db, "documents"), {
+        title,
+        description,
+        fileUrl: data.url,
+        fileType: file.type.includes("pdf") ? "pdf" : file.type.includes("image") ? "image" : file.type.includes("word") ? "docx" : file.type.includes("presentation") ? "pptx" : "audio",
+        fileSizeKb: Math.round(file.size / 1024),
+        contentType,
+        courseCode: courseCode.toUpperCase(),
+        department: user.department || "General",
+        faculty: user.faculty || "General",
+        level: user.currentLevel || "100L",
+        academicSession: "2023/2024",
+        uploaderId: user.uid,
+        uploaderName: user.displayName,
+        uploaderUsername: user.username,
+        uploaderAvatar: user.profilePicture,
+        isLecturerUpload: user.role === "lecturer",
+        viewCount: 0,
+        downloadCount: 0,
+        likesCount: 0,
+        commentsCount: 0,
+        bookmarksCount: 0,
+        isPinned: false,
+        isApproved: true,
+        isFeatured: false,
+        tags: [],
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+
       setProgress(100);
       setStep(3);
       toast.success("Document uploaded successfully!");

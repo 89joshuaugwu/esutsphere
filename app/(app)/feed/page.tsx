@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FeedPost from "@/components/feed/FeedPost";
 import FeedComposer from "@/components/feed/FeedComposer";
 import { PenSquare, Sparkles, Users, Building2, TrendingUp, UserPlus, BookOpen } from "lucide-react";
@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Timestamp } from "firebase/firestore";
 import type { FeedPostData } from "@/types";
+import { db } from "@/lib/firebase";
+import toast from "react-hot-toast";
 
 const now = Timestamp.now();
 
@@ -47,17 +49,57 @@ type FeedTab = "for-you" | "following" | "department";
 
 export default function FeedPage() {
   const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
-  const [posts, setPosts] = useState(MOCK_POSTS);
-  const [isLoading, setIsLoading] = useState(false);
+  const [posts, setPosts] = useState<FeedPostData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showComposer, setShowComposer] = useState(false);
   const { user } = useAuth();
 
+  useEffect(() => {
+    import("firebase/firestore").then(({ collection, query, orderBy, limit, onSnapshot }) => {
+      const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(50));
+      const unsubscribe = onSnapshot(q, (snap) => {
+        const livePosts = snap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as FeedPostData[];
+        setPosts(livePosts);
+        setIsLoading(false);
+      });
+      return () => unsubscribe();
+    });
+  }, []);
+
+  const handleCreatePost = async (postData: { title?: string; content: string; category: string; tags: string[]; imageUrl?: string }) => {
+    if (!user) return;
+    try {
+      const { collection, addDoc, Timestamp } = await import("firebase/firestore");
+      await addDoc(collection(db, "posts"), {
+        authorId: user.uid,
+        authorName: user.displayName,
+        authorUsername: user.username,
+        authorAvatar: user.profilePicture,
+        title: postData.title || "",
+        content: postData.content,
+        excerpt: postData.content.substring(0, 150) + (postData.content.length > 150 ? "..." : ""),
+        coverImage: postData.imageUrl || "",
+        tags: postData.tags,
+        category: postData.category,
+        likesCount: 0,
+        commentsCount: 0,
+        viewCount: 0,
+        bookmarksCount: 0,
+        createdAt: Timestamp.now(),
+        publishedAt: Timestamp.now(),
+      });
+    } catch (err: any) {
+      console.error("Error creating post:", err);
+      toast.error("Failed to post: " + err.message);
+      throw err;
+    }
+  };
+
   const loadMore = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setPosts([...posts, ...MOCK_POSTS.map(p => ({ ...p, id: p.id + Math.random() }))]);
-      setIsLoading(false);
-    }, 1000);
+    // Implement pagination with Firestore later
   };
 
   const tabs: { id: FeedTab; label: string; icon: React.ElementType }[] = [
@@ -216,6 +258,7 @@ export default function FeedPage() {
       <FeedComposer
         isOpen={showComposer}
         onClose={() => setShowComposer(false)}
+        onPost={handleCreatePost}
       />
     </>
   );

@@ -34,7 +34,7 @@ export default function TopNav() {
 
   return (
     <header
-      className="sticky top-0 z-[100] h-[var(--nav-height)] w-full px-4 md:px-6 flex items-center gap-4"
+      className="fixed top-0 left-0 right-0 z-[100] h-[var(--nav-height)] w-full px-4 md:px-6 flex items-center gap-4"
       style={{
         background: "rgba(8,8,16,0.88)",
         backdropFilter: "blur(20px)",
@@ -48,11 +48,18 @@ export default function TopNav() {
         <span className="sm:hidden"><Logo variant="icon-only" size="sm" /></span>
       </Link>
 
-      {/* Center Search */}
-      <div className="flex-1 max-w-[440px] mx-auto relative hidden md:block">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const q = (e.currentTarget.elements.namedItem("q") as HTMLInputElement).value;
+          if (q.trim()) router.push(`/search?q=${encodeURIComponent(q.trim())}`);
+        }}
+        className="flex-1 max-w-[440px] mx-auto relative hidden md:block"
+      >
         <Search className="w-[15px] h-[15px] text-text-disabled absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input
           type="text"
+          name="q"
           placeholder="Search documents, posts, users..."
           onFocus={() => setSearchFocused(true)}
           onBlur={() => setSearchFocused(false)}
@@ -62,7 +69,7 @@ export default function TopNav() {
               : ""
           }`}
         />
-      </div>
+      </form>
 
       {/* Right Side */}
       <div className="flex items-center gap-2.5 ml-auto">

@@ -125,6 +125,13 @@ export default function FeedPost({ post }: FeedPostProps) {
         )}
       </div>
 
+      {/* Cover Image */}
+      {post.coverImage && (
+        <div className="mb-3 rounded-xl overflow-hidden border border-white/[0.08]">
+          <img src={post.coverImage} alt="Post cover" className="w-full max-h-[400px] object-cover" />
+        </div>
+      )}
+
       {/* Attached Doc Preview */}
       {post.attachedDocId && (
         <Link
